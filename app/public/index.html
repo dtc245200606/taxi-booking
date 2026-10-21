@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Booking - Hệ thống đặt xe</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">🚕 Taxi Booking</div>
+    <nav class="tabs">
+      <button class="tab active" data-tab="dashboard">Tổng quan</button>
+      <button class="tab" data-tab="trips">Chuyến đi</button>
+      <button class="tab" data-tab="drivers">Tài xế</button>
+      <button class="tab" data-tab="customers">Khách hàng</button>
+    </nav>
+  </header>
+
+  <main>
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- TỔNG QUAN -->
+    <section id="dashboard" class="panel active">
+      <h1>Tổng quan hệ thống</h1>
+      <div class="cards" id="stat-cards"></div>
+      <h2>Chuyến đi gần đây</h2>
+      <table class="grid" id="recent-trips"></table>
+    </section>
+
+    <!-- CHUYẾN ĐI -->
+    <section id="trips" class="panel">
+      <h1>Đặt xe &amp; quản lý chuyến đi</h1>
+      <form id="trip-form" class="form">
+        <label>Khách hàng <select name="customer_id" required></select></label>
+        <label>Điểm đón <input name="pickup_address" required maxlength="200" placeholder="VD: 12 Lương Ngọc Quyến, TP Thái Nguyên"></label>
+        <label>Điểm đến <input name="dropoff_address" required maxlength="200" placeholder="VD: Ga Thái Nguyên"></label>
+        <label>Loại xe
+          <select name="vehicle_type">
+            <option value="bike">Xe máy</option>
+            <option value="car4" selected>Ô tô 4 chỗ</option>
+            <option value="car7">Ô tô 7 chỗ</option>
+          </select>
+        </label>
+        <label>Quãng đường (km) <input name="distance_km" type="number" min="0.1" max="500" step="0.1" value="5" required></label>
+        <button type="submit" class="btn primary">Đặt xe</button>
+      </form>
+      <div class="filter">
+        Lọc trạng thái:
+        <select id="trip-filter">
+          <option value="">Tất cả</option>
+          <option value="requested">Chờ tài xế</option>
+          <option value="assigned">Đã nhận chuyến</option>
+          <option value="in_progress">Đang chạy</option>
+          <option value="completed">Hoàn thành</option>
+          <option value="cancelled">Đã hủy</option>
+        </select>
+      </div>
+      <table class="grid" id="trip-table"></table>
+    </section>
+
+    <!-- TÀI XẾ -->
+    <section id="drivers" class="panel">
+      <h1>Quản lý tài xế</h1>
+      <form id="driver-form" class="form">
+        <label>Họ tên <input name="full_name" required maxlength="100"></label>
+        <label>Số điện thoại <input name="phone" required pattern="\+?[0-9]{9,15}"></label>
+        <label>Biển số <input name="license_plate" required maxlength="20" placeholder="20A-123.45"></label>
+        <label>Loại xe
+          <select name="vehicle_type">
+            <option value="bike">Xe máy</option>
+            <option value="car4" selected>Ô tô 4 chỗ</option>
+            <option value="car7">Ô tô 7 chỗ</option>
+          </select>
+        </label>
+        <button type="submit" class="btn primary">Thêm tài xế</button>
+      </form>
+      <table class="grid" id="driver-table"></table>
+    </section>
+
+    <!-- KHÁCH HÀNG -->
+    <section id="customers" class="panel">
+      <h1>Quản lý khách hàng</h1>
+      <form id="customer-form" class="form">
+        <label>Họ tên <input name="full_name" required maxlength="100"></label>
+        <label>Số điện thoại <input name="phone" required pattern="\+?[0-9]{9,15}"></label>
+        <label>Email <input name="email" type="email" maxlength="100"></label>
+        <button type="submit" class="btn primary">Thêm khách hàng</button>
+      </form>
+      <table class="grid" id="customer-table"></table>
+    </section>
+  </main>
+
+  <footer>Đề 22 - Hệ thống Đặt xe / Taxi Booking · Triển khai &amp; Quản trị hệ thống</footer>
+  <script src="/app.js"></script>
+</body>
+</html>

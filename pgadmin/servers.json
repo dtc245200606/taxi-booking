@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Taxi Booking DB",
+      "Group": "Taxi",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "taxi_booking",
+      "Username": "taxi_admin",
+      "SSLMode": "prefer",
+      "Comment": "Kết nối bằng tài khoản quản trị. Có thể thêm kết nối taxi_report để demo quyền chỉ đọc."
+    }
+  }
+}
