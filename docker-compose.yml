@@ -163,6 +163,7 @@ services:
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - prometheus
+      - loki
     networks:
       - monitoring
 
@@ -229,6 +230,35 @@ services:
     networks:
       - monitoring
 
+  # =============================================================
+  # LOG TẬP TRUNG: Loki + Promtail
+  # =============================================================
+  loki:
+    image: grafana/loki:3.2.0
+    container_name: taxi-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - ./monitoring/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki_data:/loki
+    networks:
+      - monitoring
+
+  # Promtail tự phát hiện container qua Docker socket (chỉ đọc) và gửi log về Loki
+  promtail:
+    image: grafana/promtail:3.2.0
+    container_name: taxi-promtail
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./monitoring/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - promtail_positions:/var/lib/promtail
+    depends_on:
+      - loki
+    networks:
+      - monitoring
+
 networks:
   frontend:
   backend:
@@ -240,3 +270,5 @@ volumes:
   pgadmin_data:
   prometheus_data:
   grafana_data:
+  loki_data:
+  promtail_positions:
