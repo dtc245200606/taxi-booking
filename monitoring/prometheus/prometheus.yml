@@ -1,0 +1,54 @@
+# Cấu hình Prometheus: thu thập metrics theo mô hình PULL mỗi 15 giây
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    project: taxi-booking
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  # Prometheus tự giám sát chính nó (chạy dưới đường dẫn /prometheus)
+  - job_name: prometheus
+    metrics_path: /prometheus/metrics
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Ứng dụng web Node.js (prom-client). App nằm trong mạng backend nội bộ,
+  # Prometheus đọc metrics gián tiếp qua cổng nội bộ 8081 của Nginx.
+  - job_name: taxi-app
+    metrics_path: /app-metrics
+    static_configs:
+      - targets: ['nginx:8081']
+        labels:
+          service: app
+
+  # Web server Nginx (stub_status -> nginx-prometheus-exporter)
+  - job_name: nginx
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+        labels:
+          service: nginx
+
+  # Cơ sở dữ liệu PostgreSQL (postgres-exporter, tài khoản taxi_monitor)
+  - job_name: postgres
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: postgres
+
+  # Tài nguyên từng container (CPU, RAM, network, disk)
+  - job_name: cadvisor
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  # Tài nguyên máy host
+  - job_name: node-exporter
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  - job_name: grafana
+    metrics_path: /grafana/metrics   # Grafana chạy dưới sub-path /grafana
+    static_configs:
+      - targets: ['grafana:3000']

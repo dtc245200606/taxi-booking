@@ -1,0 +1,72 @@
+groups:
+  - name: taxi-booking-alerts
+    rules:
+      - alert: TargetDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Mất kết nối tới {{ $labels.job }} ({{ $labels.instance }})"
+
+      - alert: TaxiAppHighErrorRate
+        expr: |
+          sum(rate(taxi_http_requests_total{status=~"5.."}[5m]))
+            / clamp_min(sum(rate(taxi_http_requests_total[5m])), 1e-9) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Tỉ lệ lỗi 5xx của ứng dụng > 5%"
+
+      - alert: TaxiAppSlowResponse
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(taxi_http_request_duration_seconds_bucket[5m]))) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "95% request của ứng dụng chậm hơn 1 giây"
+
+      - alert: TooManyWaitingTrips
+        expr: taxi_trips_by_status{status="requested"} > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Có hơn 10 chuyến đang chờ tài xế"
+
+      - alert: PostgresDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL không phản hồi"
+
+      - alert: PostgresTooManyConnections
+        expr: sum(pg_stat_database_numbackends) > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL có quá nhiều kết nối"
+
+      - alert: ContainerHighMemory
+        expr: |
+          container_memory_working_set_bytes{name=~"taxi-.*"}
+            / container_spec_memory_limit_bytes{name=~"taxi-.*"} > 0.9
+          and container_spec_memory_limit_bytes{name=~"taxi-.*"} > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.name }} dùng > 90% giới hạn RAM"
+
+      - alert: HostDiskAlmostFull
+        expr: (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"}) * 100 < 15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Ổ đĩa host còn dưới 15%"

@@ -12,3 +12,5 @@ docker compose up -d --build
 
 - Ứng dụng: https://localhost/
 - pgAdmin:  https://localhost/pgadmin/
+- Grafana:  https://localhost/grafana/   (tài khoản trong `.env`)
+- Prometheus: https://localhost/prometheus/  (Basic Auth trong `.env`)
