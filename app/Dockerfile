@@ -3,7 +3,7 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev \
- && node -e "require('express'); require('pg'); require('prom-client')" \
+ && node -e "require('express'); require('pg'); require('prom-client'); require('nodemailer')" \
  && npm cache clean --force
 
 # ---- Stage 2: image chạy thật (nhỏ gọn, không chạy bằng root) ----

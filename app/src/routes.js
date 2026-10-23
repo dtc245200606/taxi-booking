@@ -7,7 +7,8 @@ const log = require('./logger');
 const {
   HttpError, wrap, requireText, requirePhone, requireEmail, requireId, requireEnum,
 } = require('./validate');
-const { requireAuth, requireRole } = require('./auth');
+const { requireAuth, requireRole, STAFF_ROLES } = require('./auth');
+const { audit } = require('./audit');
 
 const router = express.Router();
 
@@ -43,31 +44,38 @@ function mapPgError(err) {
 }
 
 // Mọi API bên dưới đều cần đăng nhập.
-//   dispatcher : toàn quyền điều phối
+//   admin, dispatcher : toàn quyền điều phối (admin có thêm API quản trị trong staff.js)
 //   customer   : chỉ đặt xe, xem và hủy chuyến của chính mình
 router.use(requireAuth);
-const dispatcherOnly = requireRole('dispatcher');
+const staffOnly = requireRole(...STAFF_ROLES);
 const isCustomer = (req) => req.user.role === 'customer';
 
 // ---------- Tổng quan ----------
-router.get('/stats', dispatcherOnly, wrap(async (req, res) => {
+router.get('/stats', staffOnly, wrap(async (req, res) => {
   const [trips, drivers, customers, revenue] = await Promise.all([
     pool.query('SELECT status, COUNT(*)::int AS count FROM trips GROUP BY status'),
     pool.query('SELECT status, COUNT(*)::int AS count FROM drivers GROUP BY status'),
-    pool.query('SELECT COUNT(*)::int AS count FROM customers'),
-    pool.query(`SELECT COALESCE(SUM(fare), 0)::bigint AS total
-                FROM trips WHERE status = 'completed' AND completed_at::date = CURRENT_DATE`),
+    pool.query(`SELECT COUNT(*)::int AS count,
+                       COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM users u WHERE u.customer_id = c.id))::int AS with_account
+                  FROM customers c`),
+    pool.query(`SELECT COALESCE(SUM(fare), 0)::bigint AS total, COUNT(*)::int AS trips
+                FROM trips WHERE status = 'completed'
+                  AND (completed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date = (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date`), // theo ngày giờ VN
   ]);
+  const driverCounts = Object.fromEntries(drivers.rows.map((r) => [r.status, r.count]));
   res.json({
     trips: Object.fromEntries(trips.rows.map((r) => [r.status, r.count])),
-    drivers: Object.fromEntries(drivers.rows.map((r) => [r.status, r.count])),
+    drivers: driverCounts,
+    driversTotal: drivers.rows.reduce((s, r) => s + r.count, 0),
     customers: customers.rows[0].count,
+    customersWithAccount: customers.rows[0].with_account,
     revenueToday: Number(revenue.rows[0].total),
+    completedToday: revenue.rows[0].trips,
   });
 }));
 
 // ---------- Khách hàng ----------
-router.get('/customers', dispatcherOnly, wrap(async (req, res) => {
+router.get('/customers', staffOnly, wrap(async (req, res) => {
   const { rows } = await pool.query(
     `SELECT c.id, c.full_name, c.phone, c.email, c.created_at,
             COUNT(t.id)::int AS trip_count
@@ -77,7 +85,7 @@ router.get('/customers', dispatcherOnly, wrap(async (req, res) => {
   res.json(rows);
 }));
 
-router.post('/customers', dispatcherOnly, wrap(async (req, res) => {
+router.post('/customers', staffOnly, wrap(async (req, res) => {
   const fullName = requireText(req.body.full_name, 'full_name', 100);
   const phone = requirePhone(req.body.phone);
   const email = requireEmail(req.body.email);
@@ -87,6 +95,7 @@ router.post('/customers', dispatcherOnly, wrap(async (req, res) => {
       [fullName, phone, email],
     );
     log.info('customer_created', { customerId: rows[0].id });
+    await audit(req, 'customer_create', { targetType: 'customer', targetId: rows[0].id, detail: { full_name: fullName } });
     res.status(201).json(rows[0]);
   } catch (err) {
     throw mapPgError(err);
@@ -94,7 +103,7 @@ router.post('/customers', dispatcherOnly, wrap(async (req, res) => {
 }));
 
 // ---------- Tài xế ----------
-router.get('/drivers', dispatcherOnly, wrap(async (req, res) => {
+router.get('/drivers', staffOnly, wrap(async (req, res) => {
   const params = [];
   let where = '';
   if (req.query.status) {
@@ -111,7 +120,7 @@ router.get('/drivers', dispatcherOnly, wrap(async (req, res) => {
   res.json(rows);
 }));
 
-router.post('/drivers', dispatcherOnly, wrap(async (req, res) => {
+router.post('/drivers', staffOnly, wrap(async (req, res) => {
   const fullName = requireText(req.body.full_name, 'full_name', 100);
   const phone = requirePhone(req.body.phone);
   const plate = requireText(req.body.license_plate, 'license_plate', 20).toUpperCase();
@@ -123,6 +132,9 @@ router.post('/drivers', dispatcherOnly, wrap(async (req, res) => {
       [fullName, phone, plate, vehicleType],
     );
     log.info('driver_created', { driverId: rows[0].id, vehicleType });
+    await audit(req, 'driver_create', {
+      targetType: 'driver', targetId: rows[0].id, detail: { full_name: fullName, license_plate: plate },
+    });
     res.status(201).json(rows[0]);
   } catch (err) {
     throw mapPgError(err);
@@ -130,7 +142,7 @@ router.post('/drivers', dispatcherOnly, wrap(async (req, res) => {
 }));
 
 // Tài xế tự bật/tắt nhận chuyến (available <-> offline). Không cho đổi khi đang chở khách.
-router.patch('/drivers/:id/status', dispatcherOnly, wrap(async (req, res) => {
+router.patch('/drivers/:id/status', staffOnly, wrap(async (req, res) => {
   const id = requireId(req.params.id);
   const status = requireEnum(req.body.status, ['available', 'offline'], 'status');
   const { rows } = await pool.query(
@@ -139,6 +151,7 @@ router.patch('/drivers/:id/status', dispatcherOnly, wrap(async (req, res) => {
   );
   if (!rows.length) throw new HttpError(409, 'Không tìm thấy tài xế hoặc tài xế đang chở khách');
   log.info('driver_status_changed', { driverId: id, status });
+  await audit(req, 'driver_status', { targetType: 'driver', targetId: id, detail: { full_name: rows[0].full_name, status } });
   res.json(rows[0]);
 }));
 
@@ -162,8 +175,13 @@ router.get('/trips', wrap(async (req, res) => {
     conds.push(`t.customer_id = $${params.length}`);
   }
   const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
-  const { rows } = await pool.query(`${TRIP_SELECT} ${where} ORDER BY t.id DESC LIMIT 200`, params);
-  res.json(rows);
+  const [list, total] = await Promise.all([
+    pool.query(`${TRIP_SELECT} ${where} ORDER BY t.id DESC LIMIT 200`, params),
+    pool.query(`SELECT COUNT(*)::int AS n FROM trips t ${where}`, params),
+  ]);
+  // Danh sách chỉ trả 200 chuyến mới nhất; tổng thật gửi qua header để giao diện ghi rõ "200 / tổng N"
+  res.set('X-Total-Count', String(total.rows[0].n));
+  res.json(list.rows);
 }));
 
 router.get('/trips/:id', wrap(async (req, res) => {
@@ -207,6 +225,7 @@ router.post('/trips', wrap(async (req, res) => {
   metrics.tripsCreated.inc({ vehicle_type: vehicleType });
   metrics.tripTransitions.inc({ to_status: 'requested' });
   log.info('trip_created', { tripId: trip.id, customerId, vehicleType, distanceKm: distance, fare });
+  await audit(req, 'trip_create', { targetType: 'trip', targetId: trip.id, detail: { customerId, vehicleType, fare } });
   res.status(201).json(trip);
 }));
 
@@ -279,6 +298,11 @@ router.post('/trips/:id/:action', wrap(async (req, res) => {
   metrics.tripTransitions.inc({ to_status: rule.to });
   log.info('trip_status_changed', {
     tripId: id, from: result.from, to: rule.to, driverId: result.trip.driver_id, userId: req.user.id,
+  });
+  await audit(req, `trip_${action}`, {
+    targetType: 'trip',
+    targetId: id,
+    detail: { from: result.from, to: rule.to, driverId: result.trip.driver_id, reason: result.trip.cancel_reason || undefined },
   });
   res.json(result.trip);
 }));

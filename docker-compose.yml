@@ -69,6 +69,14 @@ services:
       ADMIN_USERNAME: ${APP_ADMIN_USER:-admin}
       ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD}
       SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-12}
+      # Email quên mật khẩu (mặc định gửi vào Mailpit; đổi SMTP_* để gửi email thật)
+      APP_BASE_URL: ${APP_BASE_URL:-https://localhost}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-Taxi Booking <no-reply@taxi.local>}
     depends_on:
       postgres:
         condition: service_healthy
@@ -199,6 +207,8 @@ services:
         condition: service_started
       pgadmin:
         condition: service_started
+      mailpit:
+        condition: service_started
       grafana:
         condition: service_started
       prometheus:
@@ -213,6 +223,30 @@ services:
           cpus: "1.0"
           memory: 128M
           pids: 100
+
+  # ---------- Mailpit: hộp thư giả (SMTP + giao diện web) để demo email quên mật khẩu ----------
+  # App gửi SMTP tới mailpit:1025 trong mạng backend; xem thư tại https://<host>/mail/ (Basic Auth)
+  mailpit:
+    <<: *hardening
+    image: axllent/mailpit:v1.31.4
+    container_name: taxi-mailpit
+    user: "1000:1000"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m           # thư lưu tạm trong RAM, mất khi khởi động lại (đủ cho demo)
+    environment:
+      MP_WEBROOT: /mail/
+      MP_MAX_MESSAGES: "500"
+      MP_DISABLE_VERSION_CHECK: "true"
+      TZ: Asia/Ho_Chi_Minh
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+          pids: 50
 
   # =============================================================
   # GIÁM SÁT: Prometheus + Grafana + exporters
