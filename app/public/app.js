@@ -38,12 +38,48 @@ function toast(msg, isError = false) {
 async function api(path, options = {}) {
   const res = await fetch('/api' + path, {
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
     ...options,
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
+  // Phiên hết hạn / chưa đăng nhập -> quay về màn hình đăng nhập
+  if (res.status === 401 && !path.startsWith('/auth/')) showAuth();
   if (!res.ok) throw new Error(data.error || `Lỗi ${res.status}`);
   return data;
+}
+
+// ---------- Đăng nhập / đăng ký ----------
+let currentUser = null;
+const isDispatcher = () => currentUser && currentUser.role === 'dispatcher';
+
+function showAuth() {
+  currentUser = null;
+  $('#auth').classList.remove('hidden');
+  $('#tabs').classList.add('hidden');
+  $('#user-box').classList.add('hidden');
+  document.querySelectorAll('.panel').forEach((p) => p.classList.remove('active'));
+}
+
+function onLogin(user) {
+  currentUser = user;
+  $('#auth').classList.add('hidden');
+  $('#tabs').classList.remove('hidden');
+  $('#user-box').classList.remove('hidden');
+  $('#user-name').textContent = `${user.full_name} (${isDispatcher() ? 'Điều phối viên' : 'Khách hàng'})`;
+  // Ẩn chức năng dành riêng cho điều phối viên; select bị disable sẽ không được gửi lên server
+  document.querySelectorAll('[data-role]').forEach((node) => {
+    const allowed = node.dataset.role === user.role;
+    node.classList.toggle('role-hidden', !allowed);
+    node.querySelectorAll('select, input').forEach((f) => { f.disabled = !allowed; });
+  });
+  showTab(isDispatcher() ? 'dashboard' : 'trips');
+}
+
+function switchAuth(mode) {
+  document.querySelectorAll('[data-auth]').forEach((b) => b.classList.toggle('active', b.dataset.auth === mode));
+  $('#login-form').classList.toggle('hidden', mode !== 'login');
+  $('#register-form').classList.toggle('hidden', mode !== 'register');
 }
 
 function table(target, headers, rows) {
@@ -95,6 +131,10 @@ function tripActions(x) {
       } catch (e) { toast(e.message, true); }
     },
   }, label);
+  if (!isDispatcher()) {
+    return ['requested', 'assigned'].includes(x.status)
+      ? [act('cancel', 'Hủy', 'danger')] : [el('span', { class: 'muted' }, '—')];
+  }
   switch (x.status) {
     case 'requested': return [act('assign', 'Điều tài xế'), act('cancel', 'Hủy', 'danger')];
     case 'assigned': return [act('start', 'Bắt đầu chạy'), act('cancel', 'Hủy', 'danger')];
@@ -171,7 +211,7 @@ function bindForm(selector, path, after) {
 
 const LOADERS = {
   dashboard: loadDashboard,
-  trips: () => Promise.all([loadCustomerOptions(), loadTrips()]),
+  trips: () => Promise.all([isDispatcher() ? loadCustomerOptions() : null, loadTrips()]),
   drivers: loadDrivers,
   customers: loadCustomers,
 };
@@ -187,4 +227,37 @@ $('#trip-filter').addEventListener('change', () => loadTrips().catch((e) => toas
 bindForm('#trip-form', '/trips', loadTrips);
 bindForm('#driver-form', '/drivers', loadDrivers);
 bindForm('#customer-form', '/customers', loadCustomers);
-showTab('dashboard');
+
+document.querySelectorAll('[data-auth]').forEach((b) => b.addEventListener('click', () => switchAuth(b.dataset.auth)));
+
+$('#login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = Object.fromEntries(new FormData(e.target).entries());
+  try {
+    const user = await api('/auth/login', { method: 'POST', body });
+    e.target.reset();
+    onLogin(user);
+  } catch (err) { toast(err.message, true); }
+});
+
+$('#register-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = Object.fromEntries(new FormData(e.target).entries());
+  if (body.password !== body.password2) return toast('Mật khẩu nhập lại không khớp', true);
+  delete body.password2;
+  try {
+    const user = await api('/auth/register', { method: 'POST', body });
+    e.target.reset();
+    toast('Đăng ký thành công');
+    onLogin(user);
+  } catch (err) { toast(err.message, true); }
+});
+
+$('#logout-btn').addEventListener('click', async () => {
+  await api('/auth/logout', { method: 'POST' }).catch(() => {});
+  showAuth();
+  switchAuth('login');
+});
+
+// Khởi động: còn phiên đăng nhập thì vào thẳng ứng dụng
+api('/auth/me').then(onLogin).catch(showAuth);

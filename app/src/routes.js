@@ -4,6 +4,10 @@ const express = require('express');
 const { pool, withTransaction } = require('./db');
 const metrics = require('./metrics');
 const log = require('./logger');
+const {
+  HttpError, wrap, requireText, requirePhone, requireEmail, requireId, requireEnum,
+} = require('./validate');
+const { requireAuth, requireRole } = require('./auth');
 
 const router = express.Router();
 
@@ -26,39 +30,6 @@ const TRANSITIONS = {
   cancel: { from: ['requested', 'assigned'], to: 'cancelled' },
 };
 
-class HttpError extends Error {
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
-}
-
-const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
-
-function requireText(value, field, max = 200) {
-  if (typeof value !== 'string' || !value.trim()) throw new HttpError(400, `Thiếu trường ${field}`);
-  const v = value.trim();
-  if (v.length > max) throw new HttpError(400, `Trường ${field} quá dài (tối đa ${max} ký tự)`);
-  return v;
-}
-
-function requirePhone(value) {
-  const v = requireText(value, 'phone', 20);
-  if (!/^\+?[0-9]{9,15}$/.test(v)) throw new HttpError(400, 'Số điện thoại không hợp lệ');
-  return v;
-}
-
-function requireId(value) {
-  const id = Number(value);
-  if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, 'ID không hợp lệ');
-  return id;
-}
-
-function requireEnum(value, list, field) {
-  if (!list.includes(value)) throw new HttpError(400, `${field} phải là một trong: ${list.join(', ')}`);
-  return value;
-}
-
 function calcFare(vehicleType, distanceKm) {
   const f = FARE[vehicleType];
   return Math.round((f.base + f.perKm * distanceKm) / 1000) * 1000;
@@ -71,8 +42,15 @@ function mapPgError(err) {
   return err;
 }
 
+// Mọi API bên dưới đều cần đăng nhập.
+//   dispatcher : toàn quyền điều phối
+//   customer   : chỉ đặt xe, xem và hủy chuyến của chính mình
+router.use(requireAuth);
+const dispatcherOnly = requireRole('dispatcher');
+const isCustomer = (req) => req.user.role === 'customer';
+
 // ---------- Tổng quan ----------
-router.get('/stats', wrap(async (req, res) => {
+router.get('/stats', dispatcherOnly, wrap(async (req, res) => {
   const [trips, drivers, customers, revenue] = await Promise.all([
     pool.query('SELECT status, COUNT(*)::int AS count FROM trips GROUP BY status'),
     pool.query('SELECT status, COUNT(*)::int AS count FROM drivers GROUP BY status'),
@@ -89,7 +67,7 @@ router.get('/stats', wrap(async (req, res) => {
 }));
 
 // ---------- Khách hàng ----------
-router.get('/customers', wrap(async (req, res) => {
+router.get('/customers', dispatcherOnly, wrap(async (req, res) => {
   const { rows } = await pool.query(
     `SELECT c.id, c.full_name, c.phone, c.email, c.created_at,
             COUNT(t.id)::int AS trip_count
@@ -99,11 +77,10 @@ router.get('/customers', wrap(async (req, res) => {
   res.json(rows);
 }));
 
-router.post('/customers', wrap(async (req, res) => {
+router.post('/customers', dispatcherOnly, wrap(async (req, res) => {
   const fullName = requireText(req.body.full_name, 'full_name', 100);
   const phone = requirePhone(req.body.phone);
-  const email = req.body.email ? requireText(req.body.email, 'email', 100) : null;
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new HttpError(400, 'Email không hợp lệ');
+  const email = requireEmail(req.body.email);
   try {
     const { rows } = await pool.query(
       'INSERT INTO customers (full_name, phone, email) VALUES ($1, $2, $3) RETURNING *',
@@ -117,7 +94,7 @@ router.post('/customers', wrap(async (req, res) => {
 }));
 
 // ---------- Tài xế ----------
-router.get('/drivers', wrap(async (req, res) => {
+router.get('/drivers', dispatcherOnly, wrap(async (req, res) => {
   const params = [];
   let where = '';
   if (req.query.status) {
@@ -134,7 +111,7 @@ router.get('/drivers', wrap(async (req, res) => {
   res.json(rows);
 }));
 
-router.post('/drivers', wrap(async (req, res) => {
+router.post('/drivers', dispatcherOnly, wrap(async (req, res) => {
   const fullName = requireText(req.body.full_name, 'full_name', 100);
   const phone = requirePhone(req.body.phone);
   const plate = requireText(req.body.license_plate, 'license_plate', 20).toUpperCase();
@@ -153,7 +130,7 @@ router.post('/drivers', wrap(async (req, res) => {
 }));
 
 // Tài xế tự bật/tắt nhận chuyến (available <-> offline). Không cho đổi khi đang chở khách.
-router.patch('/drivers/:id/status', wrap(async (req, res) => {
+router.patch('/drivers/:id/status', dispatcherOnly, wrap(async (req, res) => {
   const id = requireId(req.params.id);
   const status = requireEnum(req.body.status, ['available', 'offline'], 'status');
   const { rows } = await pool.query(
@@ -175,11 +152,16 @@ const TRIP_SELECT = `
 
 router.get('/trips', wrap(async (req, res) => {
   const params = [];
-  let where = '';
+  const conds = [];
   if (req.query.status) {
     params.push(requireEnum(req.query.status, TRIP_STATUSES, 'status'));
-    where = 'WHERE t.status = $1';
+    conds.push(`t.status = $${params.length}`);
   }
+  if (isCustomer(req)) {
+    params.push(req.user.customer_id);
+    conds.push(`t.customer_id = $${params.length}`);
+  }
+  const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
   const { rows } = await pool.query(`${TRIP_SELECT} ${where} ORDER BY t.id DESC LIMIT 200`, params);
   res.json(rows);
 }));
@@ -187,7 +169,10 @@ router.get('/trips', wrap(async (req, res) => {
 router.get('/trips/:id', wrap(async (req, res) => {
   const id = requireId(req.params.id);
   const trip = await pool.query(`${TRIP_SELECT} WHERE t.id = $1`, [id]);
-  if (!trip.rows.length) throw new HttpError(404, 'Không tìm thấy chuyến đi');
+  // Khách hàng xem chuyến của người khác -> báo 404 (không để lộ chuyến đó có tồn tại)
+  if (!trip.rows.length || (isCustomer(req) && trip.rows[0].customer_id !== req.user.customer_id)) {
+    throw new HttpError(404, 'Không tìm thấy chuyến đi');
+  }
   const history = await pool.query(
     'SELECT from_status, to_status, note, changed_at FROM trip_status_history WHERE trip_id = $1 ORDER BY id',
     [id],
@@ -196,7 +181,8 @@ router.get('/trips/:id', wrap(async (req, res) => {
 }));
 
 router.post('/trips', wrap(async (req, res) => {
-  const customerId = requireId(req.body.customer_id);
+  // Khách hàng chỉ đặt xe cho chính mình; điều phối viên chọn khách hàng
+  const customerId = isCustomer(req) ? req.user.customer_id : requireId(req.body.customer_id);
   const pickup = requireText(req.body.pickup_address, 'pickup_address');
   const dropoff = requireText(req.body.dropoff_address, 'dropoff_address');
   const vehicleType = requireEnum(req.body.vehicle_type, VEHICLE_TYPES, 'vehicle_type');
@@ -230,11 +216,14 @@ router.post('/trips/:id/:action', wrap(async (req, res) => {
   const action = req.params.action;
   const rule = TRANSITIONS[action];
   if (!rule) throw new HttpError(404, 'Hành động không hợp lệ');
+  if (isCustomer(req) && action !== 'cancel') throw new HttpError(403, 'Bạn chỉ có thể hủy chuyến của mình');
 
   const result = await withTransaction(async (db) => {
     // Khóa dòng để tránh 2 điều phối viên thao tác cùng lúc
     const { rows } = await db.query('SELECT * FROM trips WHERE id = $1 FOR UPDATE', [id]);
-    if (!rows.length) throw new HttpError(404, 'Không tìm thấy chuyến đi');
+    if (!rows.length || (isCustomer(req) && rows[0].customer_id !== req.user.customer_id)) {
+      throw new HttpError(404, 'Không tìm thấy chuyến đi');
+    }
     const trip = rows[0];
     if (!rule.from.includes(trip.status)) {
       throw new HttpError(409, `Không thể "${action}" khi chuyến đang ở trạng thái "${trip.status}"`);
@@ -289,9 +278,9 @@ router.post('/trips/:id/:action', wrap(async (req, res) => {
 
   metrics.tripTransitions.inc({ to_status: rule.to });
   log.info('trip_status_changed', {
-    tripId: id, from: result.from, to: rule.to, driverId: result.trip.driver_id,
+    tripId: id, from: result.from, to: rule.to, driverId: result.trip.driver_id, userId: req.user.id,
   });
   res.json(result.trip);
 }));
 
-module.exports = { router, HttpError, TRIP_STATUSES, DRIVER_STATUSES };
+module.exports = { router, TRIP_STATUSES, DRIVER_STATUSES };

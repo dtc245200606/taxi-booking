@@ -46,10 +46,10 @@ taxi-booking/
 ├── docker-compose.yml          # Toàn bộ hệ thống (13 container)
 ├── .env.example                # Mẫu biến môi trường (KHÔNG chứa mật khẩu thật)
 ├── app/                        # Ứng dụng Node.js (Dockerfile multi-stage, user node)
-│   ├── src/                    # server.js, routes.js, db.js, metrics.js, logger.js
+│   ├── src/                    # server.js, auth.js, routes.js, validate.js, db.js, metrics.js, logger.js
 │   └── public/                 # Giao diện web
 ├── db/
-│   ├── init/                   # 01-schema.sql, 02-roles.sh (phân quyền), 03-seed.sql
+│   ├── init/                   # 01-schema.sql, 02-roles.sh (phân quyền), 03-seed.sql, 04-auth.sql
 │   └── pg_hba.conf             # Chỉ cho phép mạng backend, SCRAM-SHA-256
 ├── nginx/                      # nginx.conf, conf.d/taxi.conf, snippets/security-headers.conf
 ├── pgadmin/servers.json        # Khai báo sẵn server PostgreSQL trong pgAdmin
@@ -97,7 +97,7 @@ Trình duyệt sẽ cảnh báo "Your connection is not private" vì chứng ch�
 
 | Dịch vụ | URL | Tài khoản |
 |---|---|---|
-| Ứng dụng đặt xe | https://localhost/ | không cần |
+| Ứng dụng đặt xe | https://localhost/ | Điều phối viên: `APP_ADMIN_USER` / `APP_ADMIN_PASSWORD`; khách hàng tự đăng ký |
 | pgAdmin 4 | https://localhost/pgadmin/ | `PGADMIN_EMAIL` / `PGADMIN_PASSWORD` trong `.env` |
 | Grafana | https://localhost/grafana/ | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` |
 | Prometheus | https://localhost/prometheus/ | Basic Auth `MONITOR_BASIC_AUTH_USER` / `MONITOR_BASIC_AUTH_PASSWORD` |
@@ -108,6 +108,16 @@ Trong pgAdmin, server **Taxi Booking DB** đã được khai báo sẵn, đăng 
 
 ## 5. Chức năng ứng dụng
 
+- **Đăng ký / đăng nhập**: khách hàng tự đăng ký (họ tên, SĐT, email, tên đăng nhập, mật khẩu) → hệ thống tạo
+  hồ sơ khách hàng và tài khoản. Tài khoản điều phối viên được app tạo tự động lúc khởi động từ
+  `APP_ADMIN_USER` / `APP_ADMIN_PASSWORD` trong `.env`. Phân quyền:
+  - **dispatcher** (điều phối viên): toàn bộ chức năng bên dưới.
+  - **customer** (khách hàng): chỉ đặt xe cho mình, xem và hủy chuyến của mình.
+
+  Bảo mật: mật khẩu băm bằng **scrypt** + salt riêng; phiên đăng nhập là token ngẫu nhiên trong cookie
+  `HttpOnly; Secure; SameSite=Strict`, DB chỉ lưu SHA-256 của token (bảng `sessions`, đăng xuất = thu hồi);
+  Nginx giới hạn `/api/auth/login|register` 5 request/phút/IP; đăng nhập sai ghi log `login_failed` và metric
+  `taxi_auth_events_total`.
 - **Khách hàng**: thêm mới, xem danh sách và số chuyến đã đi.
 - **Tài xế**: thêm mới (loại xe: xe máy, ô tô 4 chỗ, 7 chỗ), bật/tắt nhận chuyến, xem số chuyến hoàn thành.
 - **Chuyến đi**: đặt xe (tự tính giá cước theo loại xe và quãng đường), điều tài xế (tự chọn tài xế rảnh cùng loại xe),
@@ -116,7 +126,7 @@ Trong pgAdmin, server **Taxi Booking DB** đã được khai báo sẵn, đăng 
 
 Luồng trạng thái: `requested → assigned → in_progress → completed`, hủy được ở `requested` hoặc `assigned`.
 
-REST API chính: `GET/POST /api/customers`, `GET/POST /api/drivers`, `PATCH /api/drivers/:id/status`,
+REST API chính: `POST /api/auth/{register|login|logout}`, `GET /api/auth/me`, `GET/POST /api/customers`, `GET/POST /api/drivers`, `PATCH /api/drivers/:id/status`,
 `GET/POST /api/trips`, `GET /api/trips/:id`, `POST /api/trips/:id/{assign|start|complete|cancel}`, `GET /api/stats`.
 
 ## 6. Giám sát (Prometheus + Grafana)

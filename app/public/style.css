@@ -53,3 +53,14 @@ footer { text-align: center; color: var(--muted); font-size: 12px; padding: 24px
 @media (max-width: 700px) {
   .grid { display: block; overflow-x: auto; }
 }
+.user-box { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 14px; color: #d1d5db; }
+.user-box.hidden, .tabs.hidden { display: none; }
+.auth { max-width: 420px; margin: 40px auto; }
+.auth.hidden { display: none; }
+.auth-switch { display: flex; gap: 4px; margin-bottom: 12px; }
+.auth-switch .tab { color: var(--text); border: 1px solid var(--border); background: var(--card); }
+.auth-switch .tab.active { background: var(--primary); border-color: var(--primary-dark); }
+.auth-form { flex-direction: column; align-items: stretch; }
+.auth-form.hidden { display: none; }
+.auth-form label { min-width: 0; }
+.role-hidden { display: none !important; }

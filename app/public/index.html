@@ -9,19 +9,45 @@
 <body>
   <header class="topbar">
     <div class="brand">🚕 Taxi Booking</div>
-    <nav class="tabs">
-      <button class="tab active" data-tab="dashboard">Tổng quan</button>
+    <nav class="tabs hidden" id="tabs">
+      <button class="tab" data-tab="dashboard" data-role="dispatcher">Tổng quan</button>
       <button class="tab" data-tab="trips">Chuyến đi</button>
-      <button class="tab" data-tab="drivers">Tài xế</button>
-      <button class="tab" data-tab="customers">Khách hàng</button>
+      <button class="tab" data-tab="drivers" data-role="dispatcher">Tài xế</button>
+      <button class="tab" data-tab="customers" data-role="dispatcher">Khách hàng</button>
     </nav>
+    <div class="user-box hidden" id="user-box">
+      <span id="user-name"></span>
+      <button class="btn" id="logout-btn">Đăng xuất</button>
+    </div>
   </header>
 
   <main>
     <div id="toast" class="toast hidden"></div>
 
+    <!-- ĐĂNG NHẬP / ĐĂNG KÝ -->
+    <section id="auth" class="auth hidden">
+      <div class="auth-switch">
+        <button class="tab active" data-auth="login">Đăng nhập</button>
+        <button class="tab" data-auth="register">Đăng ký</button>
+      </div>
+      <form id="login-form" class="form auth-form">
+        <label>Tên đăng nhập <input name="username" required maxlength="30" autocomplete="username"></label>
+        <label>Mật khẩu <input name="password" type="password" required maxlength="128" autocomplete="current-password"></label>
+        <button type="submit" class="btn primary">Đăng nhập</button>
+      </form>
+      <form id="register-form" class="form auth-form hidden">
+        <label>Họ tên <input name="full_name" required maxlength="100" autocomplete="name"></label>
+        <label>Số điện thoại <input name="phone" required pattern="\+?[0-9]{9,15}" autocomplete="tel"></label>
+        <label>Email (không bắt buộc) <input name="email" type="email" maxlength="100" autocomplete="email"></label>
+        <label>Tên đăng nhập <input name="username" required minlength="3" maxlength="30" pattern="[A-Za-z0-9_.]{3,30}" autocomplete="username"></label>
+        <label>Mật khẩu (≥ 8 ký tự, có chữ và số) <input name="password" type="password" required minlength="8" maxlength="128" autocomplete="new-password"></label>
+        <label>Nhập lại mật khẩu <input name="password2" type="password" required minlength="8" maxlength="128" autocomplete="new-password"></label>
+        <button type="submit" class="btn primary">Tạo tài khoản</button>
+      </form>
+    </section>
+
     <!-- TỔNG QUAN -->
-    <section id="dashboard" class="panel active">
+    <section id="dashboard" class="panel">
       <h1>Tổng quan hệ thống</h1>
       <div class="cards" id="stat-cards"></div>
       <h2>Chuyến đi gần đây</h2>
@@ -32,7 +58,7 @@
     <section id="trips" class="panel">
       <h1>Đặt xe &amp; quản lý chuyến đi</h1>
       <form id="trip-form" class="form">
-        <label>Khách hàng <select name="customer_id" required></select></label>
+        <label data-role="dispatcher">Khách hàng <select name="customer_id" required></select></label>
         <label>Điểm đón <input name="pickup_address" required maxlength="200" placeholder="VD: 12 Lương Ngọc Quyến, TP Thái Nguyên"></label>
         <label>Điểm đến <input name="dropoff_address" required maxlength="200" placeholder="VD: Ga Thái Nguyên"></label>
         <label>Loại xe

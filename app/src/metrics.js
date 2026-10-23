@@ -34,6 +34,13 @@ const tripTransitions = new client.Counter({
   registers: [register],
 });
 
+const authEvents = new client.Counter({
+  name: 'taxi_auth_events_total',
+  help: 'Số lần đăng ký/đăng nhập theo kết quả',
+  labelNames: ['event', 'result'],
+  registers: [register],
+});
+
 // Gauge được tính lại từ DB mỗi lần Prometheus scrape.
 const tripsByStatus = new client.Gauge({
   name: 'taxi_trips_by_status',
@@ -55,6 +62,7 @@ module.exports = {
   httpDuration,
   tripsCreated,
   tripTransitions,
+  authEvents,
   tripsByStatus,
   driversByStatus,
 };

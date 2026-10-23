@@ -65,6 +65,10 @@ services:
       DB_USER: taxi_app         # tài khoản quyền hạn chế, không dùng tài khoản admin
       DB_PASSWORD: ${APP_DB_PASSWORD}
       LOG_LEVEL: info
+      # Tài khoản điều phối viên tạo tự động lúc khởi động (nếu chưa có)
+      ADMIN_USERNAME: ${APP_ADMIN_USER:-admin}
+      ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD}
+      SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-12}
     depends_on:
       postgres:
         condition: service_healthy

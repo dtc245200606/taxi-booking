@@ -3,7 +3,9 @@ const express = require('express');
 const { pool } = require('./db');
 const metrics = require('./metrics');
 const log = require('./logger');
-const { router, HttpError, TRIP_STATUSES, DRIVER_STATUSES } = require('./routes');
+const { HttpError } = require('./validate');
+const auth = require('./auth');
+const { router, TRIP_STATUSES, DRIVER_STATUSES } = require('./routes');
 
 const PORT = Number(process.env.PORT || 3000);
 const app = express();
@@ -62,7 +64,8 @@ app.get('/metrics', async (req, res) => {
   res.end(await metrics.register.metrics());
 });
 
-app.use('/api', router);
+app.use('/api/auth', auth.router);
+app.use('/api', auth.authenticate, router);
 app.use(express.static(path.join(__dirname, '..', 'public'), { maxAge: '1h' }));
 
 app.use('/api', (req, res) => res.status(404).json({ error: 'Không tìm thấy API' }));
@@ -76,7 +79,10 @@ app.use((err, req, res, next) => {
   return res.status(500).json({ error: 'Lỗi hệ thống, vui lòng thử lại sau' });
 });
 
-const server = app.listen(PORT, () => log.info('server_started', { port: PORT }));
+const server = app.listen(PORT, () => {
+  log.info('server_started', { port: PORT });
+  auth.ensureAdmin();
+});
 
 function shutdown(signal) {
   log.info('server_stopping', { signal });
