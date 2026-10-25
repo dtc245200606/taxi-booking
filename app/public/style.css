@@ -242,6 +242,44 @@ main { max-width: 1240px; margin: 0 auto; padding: 24px 20px; }
 .pin::after { content: ""; position: absolute; left: 12px; bottom: 15px; width: 12px; height: 12px; border-radius: 50%; }
 .pin-from::after { background: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
 .pin-to::after { background: var(--red); border-radius: 3px; box-shadow: 0 0 0 4px var(--red-soft); }
+.pin input { padding-right: 46px; }
+.map-open {
+  position: absolute; right: 6px; bottom: 6px; width: 34px; height: 30px; border: 0; border-radius: 8px;
+  background: var(--primary-soft); font-size: 16px; cursor: pointer; transition: filter .15s var(--ease), transform .15s var(--ease);
+}
+.map-open:hover { filter: brightness(.95); }
+.map-open:active { transform: scale(.94); }
+.map-open:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+
+/* ---------- Hộp thoại chọn địa điểm trên bản đồ ---------- */
+.modal.map-modal { width: min(820px, calc(100vw - 24px)); max-height: calc(100vh - 24px); display: none; flex-direction: column; gap: 12px; padding: 20px; }
+.modal.map-modal[open] { display: flex; }
+.map-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.map-head h3 { margin: 0; }
+.map-search { position: relative; display: flex; gap: 8px; }
+.map-search input { flex: 1; min-width: 0; }
+.map-results {
+  list-style: none; margin: -4px 0 0; padding: 4px; max-height: 200px; overflow: auto;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+}
+.map-results li.muted { padding: 8px 10px; }
+.map-results button {
+  display: block; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent;
+  color: var(--text); text-align: left; font: inherit; cursor: pointer;
+}
+.map-results button:hover, .map-results button:focus-visible { background: var(--primary-soft); outline: none; }
+.map { height: min(420px, 50vh); min-height: 240px; border-radius: var(--radius-sm); border: 1px solid var(--border); z-index: 0; }
+.map-hint { margin: -4px 0 0; font-size: 12.5px; }
+.map-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.map-summary strong { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.map-pin { border-radius: 50%; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(15, 23, 42, .4); cursor: grab; }
+.map-pin.pickup { background: var(--green); }
+.map-pin.dropoff { background: var(--red); border-radius: 5px; }
+@media (max-width: 720px) {
+  .map-search { flex-wrap: wrap; }
+  .map-search input { flex-basis: 100%; }
+  .map-summary { flex-direction: column; align-items: flex-start; }
+}
 
 .vehicles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .vehicle {

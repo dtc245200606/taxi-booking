@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>Taxi Booking - Hệ thống đặt xe</title>
+  <link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -195,9 +196,11 @@
             <div class="route-inputs">
               <label class="field pin pin-from"><span>Điểm đón</span>
                 <input name="pickup_address" required maxlength="200" placeholder="VD: 12 Lương Ngọc Quyến, TP Thái Nguyên">
+                <button type="button" class="map-open" data-map="pickup" title="Chọn điểm đón trên bản đồ" aria-label="Chọn điểm đón trên bản đồ">🗺️</button>
               </label>
               <label class="field pin pin-to"><span>Điểm đến</span>
                 <input name="dropoff_address" required maxlength="200" placeholder="VD: Ga Thái Nguyên">
+                <button type="button" class="map-open" data-map="dropoff" title="Chọn điểm đến trên bản đồ" aria-label="Chọn điểm đến trên bản đồ">🗺️</button>
               </label>
             </div>
             <fieldset class="field">
@@ -602,6 +605,38 @@
     </form>
   </dialog>
 
+  <!-- Chọn điểm đón / điểm đến trên bản đồ (OpenStreetMap) -->
+  <dialog id="map-dialog" class="modal map-modal">
+    <div class="map-head">
+      <h3>Chọn địa điểm trên bản đồ</h3>
+      <button type="button" class="btn ghost sm" id="map-close" aria-label="Đóng">✕</button>
+    </div>
+    <div class="chips" id="map-target">
+      <button type="button" class="chip" data-target="pickup">🟢 Điểm đón</button>
+      <button type="button" class="chip" data-target="dropoff">🔴 Điểm đến</button>
+    </div>
+    <form id="map-search" class="map-search">
+      <input type="search" name="q" maxlength="200" placeholder="Tìm địa chỉ, VD: Ga Thái Nguyên" autocomplete="off">
+      <button type="submit" class="btn">Tìm</button>
+      <button type="button" class="btn ghost" id="map-locate" title="Dùng vị trí hiện tại của tôi">📍 Vị trí của tôi</button>
+    </form>
+    <ul id="map-results" class="map-results hidden"></ul>
+    <div id="map" class="map"></div>
+    <p class="muted map-hint">Bấm lên bản đồ để đặt điểm, kéo ghim để chỉnh lại vị trí.</p>
+    <div class="map-summary">
+      <div class="route">
+        <span class="stop from" id="map-from">Chưa chọn điểm đón</span>
+        <span class="stop to muted" id="map-to">Chưa chọn điểm đến</span>
+      </div>
+      <strong id="map-distance"></strong>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn ghost" id="map-cancel">Hủy</button>
+      <button type="button" class="btn primary" id="map-ok">Dùng địa điểm này</button>
+    </div>
+  </dialog>
+
+  <script src="/vendor/leaflet/leaflet.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>
