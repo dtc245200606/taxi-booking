@@ -1151,3 +1151,27 @@ table.grid:empty {
   .grid th:first-child, .grid td:first-child { padding-left: 14px; }
   .card-head { padding: 14px 16px; }
 }
+
+/* ---------- Chế độ tài xế ---------- */
+.driver-switch { display: flex; align-items: center; gap: 18px; padding: 20px 22px; }
+.driver-switch .status-icon { color: var(--gray-ink); background: var(--gray-soft); }
+.driver-switch[data-state="available"] { border-color: color-mix(in srgb, var(--green) 45%, var(--border)); }
+.driver-switch[data-state="available"] .status-icon { color: var(--green-ink); background: var(--green-soft); }
+.driver-switch[data-state="on_trip"] .status-icon { color: var(--blue-ink); background: var(--blue-soft); }
+.driver-switch-text { flex: 1; min-width: 0; }
+.driver-switch-text h2 { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 18px; }
+.driver-switch-text .muted { margin-top: 4px; }
+.driver-jobs { display: grid; gap: 12px; padding: 16px; }
+.driver-jobs .empty { padding: 32px 16px !important; }
+.job { display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); }
+.job.new { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); animation: rise .35s var(--ease); }
+.job-head { display: flex; align-items: center; gap: 10px; }
+.job-head .id { font-weight: 700; color: var(--muted); }
+.job-fare { margin-left: auto; font-size: 18px; color: var(--heading); font-variant-numeric: tabular-nums; }
+.job-meta { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; padding-top: 10px; border-top: 1px dashed var(--border-strong); }
+.job .actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 720px) {
+  .driver-switch { flex-direction: column; align-items: stretch; text-align: left; }
+  .driver-switch .btn { width: 100%; }
+  .job .actions .btn { flex: 1; }
+}

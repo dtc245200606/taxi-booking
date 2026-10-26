@@ -242,7 +242,7 @@ async function lockPending(db, id) {
   return rows[0];
 }
 
-// Duyệt: tạo tài xế (trạng thái "Nghỉ" - điều phối viên bật nhận chuyến khi tài xế sẵn sàng)
+// Duyệt: tạo tài xế (trạng thái "Nghỉ" - tài xế tự bật nhận chuyến trong mục Tài xế, xem driver-mode.js)
 router.post('/driver-applications/:id/approve', staffOnly, wrap(async (req, res) => {
   const id = requireId(req.params.id);
   const result = await withTransaction(async (db) => {

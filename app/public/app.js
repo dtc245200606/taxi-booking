@@ -305,6 +305,8 @@ const isAdmin = () => currentUser && currentUser.role === "admin";
 
 function showAuth() {
   currentUser = null;
+  stopDriverPoll();
+  $("#menu-driver-label").textContent = "Đăng ký làm tài xế";
   $$("dialog[open]").forEach((d) => d.close());
   $("#app").classList.add("hidden");
   $("#auth").classList.remove("hidden");
@@ -340,8 +342,9 @@ function onLogin(user) {
     ? "Danh sách chuyến đi"
     : "Chuyến đi của tôi";
   renderGreeting();
-  $("#tabs").classList.toggle("hidden", !isStaff()); // khách hàng không cần thanh tab
+  $("#tabs").classList.toggle("hidden", !isStaff()); // khách hàng không cần thanh tab (trừ khi đã là tài xế)
   if (isStaff()) refreshPendingCount().catch(() => {});
+  else renderDriverAccess().catch(() => {});
   showTab(isStaff() ? "dashboard" : "trips");
 }
 
@@ -1358,6 +1361,9 @@ async function loadTrips() {
           x.cancel_reason
             ? el("span", { class: "muted reason" }, x.cancel_reason)
             : null,
+          x.status === "assigned" && !x.driver_accepted_at
+            ? el("span", { class: "muted reason" }, "Chờ tài xế xác nhận")
+            : null,
         ),
         el("div", { class: "actions" }, tripActions(x)),
       ].filter((c) => c !== undefined),
@@ -1462,7 +1468,13 @@ async function pollTripSearch() {
   if (!id) return;
   try {
     const t = await api(`/trips/${id}`);
-    if (tripSearch?.id !== id || t.status === "requested") return;
+    // Tài xế được giao nhưng chưa xác nhận (có thể từ chối) -> vẫn đang tìm
+    if (
+      tripSearch?.id !== id ||
+      t.status === "requested" ||
+      (t.status === "assigned" && !t.driver_accepted_at)
+    )
+      return;
     finishTripSearch(t);
   } catch {
     // Phiên hết hạn -> api() đã đưa về màn hình đăng nhập; lỗi mạng tạm thời thì thử lại ở lần sau
@@ -2029,8 +2041,18 @@ function applicationStatusCard(a) {
       "approved",
       "check-circle",
       "Chúc mừng! Bạn đã là tài xế đối tác",
-      `Hồ sơ được duyệt ngày ${dateOnly(a.reviewed_at)}. Tổng đài sẽ bật nhận chuyến cho bạn sau khi ký hợp đồng.`,
+      `Hồ sơ được duyệt ngày ${dateOnly(a.reviewed_at)}. Vào mục Tài xế để bật nhận chuyến và xác nhận đón khách.`,
       info,
+      el(
+        "div",
+        { class: "actions" },
+        el(
+          "button",
+          { class: "btn primary", onclick: () => showTab("driver-mode") },
+          icon("steering"),
+          "Mở chế độ tài xế",
+        ),
+      ),
       a.driver_status
         ? el(
             "p",
@@ -2105,6 +2127,367 @@ $("#apply-form").addEventListener("submit", async (e) => {
     toast(err.message, true);
   }
 });
+
+// ---------- Chế độ tài xế (khách hàng đã là tài xế đối tác) ----------
+const DRIVER_POLL_MS = 5000;
+let isDriver = false;
+let driverPoll = null;
+let driverNewCount = 0;
+
+// Hiện thanh tab "Chuyến đi / Tài xế" + đổi mục menu khi khách đã là tài xế; trả về dữ liệu /driver/me
+async function renderDriverAccess() {
+  const data = await api("/driver/me");
+  isDriver = !!data.driver;
+  $("#tabs").classList.toggle("hidden", !isStaff() && !isDriver);
+  $("#menu-driver-label").textContent = isDriver
+    ? "Chế độ tài xế"
+    : "Đăng ký làm tài xế";
+  moveTabIndicator();
+  // Chuyến mới đang chờ tài xế + chuyến tổng đài giao chưa xác nhận -> chấm đỏ trên tab, báo khi có chuyến mới
+  const waiting = isDriver
+    ? data.open.length +
+      data.current.filter((t) => !t.driver_accepted_at).length
+    : 0;
+  const countEl = $("#driver-new-count");
+  countEl.textContent = waiting;
+  countEl.classList.toggle("hidden", !waiting);
+  if (waiting > driverNewCount) toast("Có chuyến mới! Vào mục Tài xế để nhận chuyến");
+  driverNewCount = waiting;
+  if (isDriver && !driverPoll) {
+    driverPoll = setInterval(() => {
+      if (!currentUser || document.hidden) return;
+      const onPanel = $("#driver-mode").classList.contains("active");
+      (onPanel ? loadDriverMode() : renderDriverAccess()).catch(() => {});
+    }, DRIVER_POLL_MS);
+  }
+  return data;
+}
+
+function stopDriverPoll() {
+  clearInterval(driverPoll);
+  driverPoll = null;
+  isDriver = false;
+  driverNewCount = 0;
+}
+
+const DRIVER_STATE = {
+  available: [
+    "Đang nhận chuyến",
+    "Chuyến khách vừa đặt sẽ hiện bên dưới - bấm Nhận chuyến để nhận trước tài xế khác.",
+  ],
+  on_trip: [
+    "Đang có chuyến",
+    "Hoàn thành chuyến hiện tại trước khi chuyển sang nghỉ.",
+  ],
+  offline: [
+    "Đang nghỉ chạy xe",
+    "Bạn sẽ không được điều chuyến cho tới khi bật nhận chuyến.",
+  ],
+};
+
+async function setDriverStatus(btn, status) {
+  try {
+    await withBusy(btn, () =>
+      api("/driver/me/status", { method: "PATCH", body: { status } }),
+    );
+    toast(
+      status === "available"
+        ? "Đã bật nhận chuyến. Chúc bạn thượng lộ bình an!"
+        : "Đã chuyển sang nghỉ chạy xe",
+    );
+  } catch (err) {
+    toast(err.message, true);
+  }
+  loadDriverMode().catch((e) => toast(e.message, true));
+}
+
+function renderDriverSwitch(d) {
+  const [title, desc] = DRIVER_STATE[d.status];
+  const btn =
+    d.status === "offline"
+      ? el(
+          "button",
+          {
+            class: "btn primary lg",
+            onclick: (e) => setDriverStatus(e.currentTarget, "available"),
+          },
+          icon("power"),
+          "Bật nhận chuyến",
+        )
+      : el(
+          "button",
+          {
+            class: "btn ghost lg",
+            onclick: (e) => setDriverStatus(e.currentTarget, "offline"),
+          },
+          icon("power"),
+          "Nghỉ chạy xe",
+        );
+  btn.disabled = d.status === "on_trip";
+  $("#driver-switch").dataset.state = d.status;
+  $("#driver-switch").replaceChildren(
+    el("div", { class: "status-icon" }, icon("steering")),
+    el(
+      "div",
+      { class: "driver-switch-text" },
+      el("h2", {}, title, " ", badge(d.status)),
+      el("p", { class: "muted" }, desc),
+    ),
+    btn,
+  );
+}
+
+async function driverTripAction(btn, trip, action, body, msg) {
+  try {
+    await withBusy(btn, () =>
+      api(`/driver/trips/${trip.id}/${action}`, { method: "POST", body }),
+    );
+    toast(msg);
+  } catch (err) {
+    toast(err.message, true);
+  }
+  loadDriverMode().catch((e) => toast(e.message, true));
+}
+
+function driverJobActions(t) {
+  const btn = (label, cls, ic, onclick) =>
+    el("button", { class: `btn ${cls}`, onclick }, icon(ic), label);
+  if (t.status === "assigned" && !t.driver_accepted_at) {
+    return [
+      btn("Từ chối", "danger", "x", async (e) => {
+        const b = e.currentTarget;
+        const reason = await promptDialog(
+          `Từ chối chuyến #${t.id}?`,
+          "Chuyến sẽ được chuyển cho tài xế khác và không giao lại cho bạn.",
+          "Lý do từ chối",
+          "Từ chối chuyến",
+        );
+        if (reason === null) return;
+        driverTripAction(
+          b,
+          t,
+          "reject",
+          { reason: reason.slice(0, 200) },
+          `Đã từ chối chuyến #${t.id}`,
+        );
+      }),
+      btn("Xác nhận đón khách", "primary", "check", (e) =>
+        driverTripAction(
+          e.currentTarget,
+          t,
+          "accept",
+          {},
+          `Đã nhận chuyến #${t.id}. Hãy tới điểm đón ${t.pickup_address}`,
+        ),
+      ),
+    ];
+  }
+  if (t.status === "assigned") {
+    return [
+      btn("Đã đón khách – Bắt đầu chuyến", "primary", "play", (e) =>
+        driverTripAction(
+          e.currentTarget,
+          t,
+          "start",
+          {},
+          `Chuyến #${t.id} đã bắt đầu`,
+        ),
+      ),
+    ];
+  }
+  return [
+    btn("Hoàn thành chuyến", "primary", "check-circle", async (e) => {
+      const b = e.currentTarget;
+      if (
+        !(await confirmDialog(
+          `Hoàn thành chuyến #${t.id}?`,
+          `Xác nhận đã trả khách tại ${t.dropoff_address} và thu ${money(t.fare)}.`,
+          "Hoàn thành",
+        ))
+      )
+        return;
+      driverTripAction(
+        b,
+        t,
+        "complete",
+        {},
+        `Hoàn thành chuyến #${t.id} · +${money(t.fare)}`,
+      );
+    }),
+  ];
+}
+
+function driverJob(t) {
+  const waiting = t.status === "assigned" && !t.driver_accepted_at;
+  return el(
+    "article",
+    { class: `job${waiting ? " new" : ""}` },
+    el(
+      "div",
+      { class: "job-head" },
+      el("span", { class: "id" }, `#${t.id}`),
+      waiting
+        ? el("span", { class: "badge s-requested" }, "Chờ bạn xác nhận")
+        : badge(t.status),
+      el("strong", { class: "job-fare" }, money(t.fare)),
+    ),
+    route(t.pickup_address, t.dropoff_address),
+    el(
+      "div",
+      { class: "job-meta" },
+      person(t.customer_name, t.customer_phone),
+      el(
+        "span",
+        { class: "muted" },
+        `${VEHICLE_TEXT[t.vehicle_type]} · ${t.distance_km} km · giao lúc ${time(t.assigned_at)}`,
+      ),
+    ),
+    el("div", { class: "actions" }, driverJobActions(t)),
+  );
+}
+
+// Thẻ chuyến mới (chưa có tài xế): chưa hiện tên / SĐT khách cho tới khi nhận chuyến
+function openJob(t) {
+  return el(
+    "article",
+    { class: "job new" },
+    el(
+      "div",
+      { class: "job-head" },
+      el("span", { class: "id" }, `#${t.id}`),
+      el("span", { class: "muted" }, `đặt lúc ${time(t.requested_at)}`),
+      el("strong", { class: "job-fare" }, money(t.fare)),
+    ),
+    route(t.pickup_address, t.dropoff_address),
+    el(
+      "div",
+      { class: "job-meta" },
+      el(
+        "span",
+        { class: "muted" },
+        `${VEHICLE_TEXT[t.vehicle_type]} · ${t.distance_km} km`,
+      ),
+      el(
+        "div",
+        { class: "actions" },
+        el(
+          "button",
+          {
+            class: "btn primary",
+            onclick: (e) =>
+              driverTripAction(
+                e.currentTarget,
+                t,
+                "claim",
+                {},
+                `Đã nhận chuyến #${t.id}. Hãy tới điểm đón ${t.pickup_address}`,
+              ),
+          },
+          icon("check"),
+          "Nhận chuyến",
+        ),
+      ),
+    ),
+  );
+}
+
+async function loadDriverMode() {
+  const {
+    driver: d,
+    open,
+    current,
+    recent,
+    today,
+  } = await renderDriverAccess();
+  if (!d) {
+    showTab("become-driver");
+    return;
+  }
+  $("#driver-mode-sub").textContent =
+    `${VEHICLE_TEXT[d.vehicle_type]} · ${d.license_plate}`;
+  renderDriverSwitch(d);
+
+  $("#driver-stats").replaceChildren(
+    ...[
+      ["Hoàn thành hôm nay", num(today.completed), "check-circle", "green"],
+      ["Thu nhập hôm nay", money(today.revenue), "wallet", "amber"],
+      ["Đánh giá", `★ ${d.rating}`, "user", "blue"],
+      ["Từ chối hôm nay", num(today.rejected), "x-circle", "gray"],
+    ].map(([label, value, ic, tone]) =>
+      el(
+        "div",
+        { class: `stat tone-${tone}` },
+        el("div", { class: "stat-icon" }, icon(ic)),
+        el(
+          "div",
+          {},
+          el("div", { class: "stat-label" }, label),
+          el("div", { class: "stat-value" }, value),
+        ),
+      ),
+    ),
+  );
+
+  $("#driver-jobs").replaceChildren(
+    ...(current.length
+      ? current.map(driverJob)
+      : [
+          el(
+            "div",
+            { class: "empty" },
+            el("span", { class: "empty-icon" }, icon("inbox")),
+            "Bạn chưa có chuyến nào. Nhận một chuyến mới ở danh sách bên dưới.",
+          ),
+        ]),
+  );
+
+  $("#driver-open-count").textContent = open.length
+    ? `${num(open.length)} chuyến`
+    : "";
+  $("#driver-open").replaceChildren(
+    ...(open.length
+      ? open.map(openJob)
+      : [
+          el(
+            "div",
+            { class: "empty" },
+            el("span", { class: "empty-icon" }, icon("inbox")),
+            d.status === "offline"
+              ? "Bạn đang nghỉ. Bật nhận chuyến để thấy chuyến khách vừa đặt."
+              : d.status === "on_trip"
+                ? "Hoàn thành chuyến hiện tại để nhận chuyến mới."
+                : `Chưa có khách đặt ${VEHICLE_TEXT[d.vehicle_type].toLowerCase()}. Chuyến mới sẽ hiện ở đây…`,
+          ),
+        ]),
+  );
+
+  table(
+    "#driver-recent",
+    ["#", "Khách hàng", "Lộ trình", "Giá", "Thời gian", "Trạng thái"],
+    recent.map((t) => [
+      { v: `#${t.id}`, cls: "id" },
+      person(t.customer_name, t.customer_phone),
+      route(t.pickup_address, t.dropoff_address),
+      { v: money(t.fare), cls: "num strong" },
+      { v: time(t.completed_at || t.cancelled_at), cls: "num muted" },
+      el(
+        "div",
+        {},
+        badge(t.status),
+        t.cancel_reason
+          ? el("span", { class: "muted reason" }, t.cancel_reason)
+          : null,
+      ),
+    ]),
+    "Chưa có chuyến nào hoàn thành",
+  );
+}
+
+$("#refresh-driver").addEventListener("click", () =>
+  loadDriverMode()
+    .then(() => toast("Đã cập nhật"))
+    .catch((e) => toast(e.message, true)),
+);
 
 // ---------- Duyệt hồ sơ tài xế (nhân viên) ----------
 let applicationFilter = "pending";
@@ -2572,6 +2955,7 @@ const LOADERS = {
   drivers: () =>
     Promise.all([loadApplications(), loadDrivers(), refreshPendingCount()]),
   "become-driver": loadBecomeDriver,
+  "driver-mode": loadDriverMode,
   profile: loadProfile,
   customers: loadCustomers,
   staff: loadStaff,
@@ -2732,7 +3116,8 @@ $$("[data-menu]").forEach((b) =>
     toggleMenu(false);
     const action = b.dataset.menu;
     if (action === "logout") return logout();
-    if (action === "driver") return showTab("become-driver");
+    if (action === "driver")
+      return showTab(isDriver ? "driver-mode" : "become-driver");
     showTab("profile");
     const target = { password: "#password-form", sessions: "#sessions-card" }[
       action
@@ -2803,7 +3188,7 @@ async function renderDriverCard() {
         : a.status === "approved"
           ? [
               `Bạn đã là tài xế đối tác từ ${dateOnly(a.reviewed_at)} · ${a.license_plate}.`,
-              "Xem chi tiết",
+              "Mở chế độ tài xế",
             ]
           : [
               `Hồ sơ trước bị từ chối: ${a.review_note || "—"}`,
@@ -2811,6 +3196,8 @@ async function renderDriverCard() {
             ];
   $("#driver-card-text").textContent = text;
   $("#driver-card-btn").textContent = btn;
+  $("#driver-card-btn").dataset.gotoTab =
+    a && a.status === "approved" ? "driver-mode" : "become-driver";
 }
 
 function browserName(ua) {

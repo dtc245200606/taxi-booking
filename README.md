@@ -49,7 +49,7 @@ taxi-booking/
 │   ├── src/                    # server.js, auth.js, staff.js, audit.js, mailer.js, driver-apply.js, profile.js, stats.js, routes.js, validate.js, db.js, metrics.js, logger.js
 │   └── public/                 # Giao diện web
 ├── db/
-│   ├── init/                   # 01-schema.sql, 02-roles.sh (phân quyền), 03-seed.sql, 04-auth.sql, 05-staff.sql, 06-password-reset.sql, 07-driver-applications.sql, 08-profile.sql
+│   ├── init/                   # 01-schema.sql, 02-roles.sh (phân quyền), 03-seed.sql, 04-auth.sql, 05-staff.sql, 06-password-reset.sql, 07-driver-applications.sql, 08-profile.sql, 09-driver-mode.sql
 │   └── pg_hba.conf             # Chỉ cho phép mạng backend, SCRAM-SHA-256
 ├── nginx/                      # nginx.conf, conf.d/taxi.conf, snippets/security-headers.conf
 ├── pgadmin/servers.json        # Khai báo sẵn server PostgreSQL trong pgAdmin

@@ -46,6 +46,7 @@ function mapPgError(err) {
 // Mọi API bên dưới đều cần đăng nhập.
 //   admin, dispatcher : toàn quyền điều phối (admin có thêm API quản trị trong staff.js)
 //   customer   : chỉ đặt xe, xem và hủy chuyến của chính mình
+//                (khách đã là tài xế đối tác có thêm API riêng trong driver-mode.js)
 router.use(requireAuth);
 const staffOnly = requireRole(...STAFF_ROLES);
 const isCustomer = (req) => req.user.role === 'customer';
@@ -252,20 +253,25 @@ router.post('/trips/:id/:action', wrap(async (req, res) => {
     let note = null;
 
     if (action === 'assign') {
-      // Chọn tài xế được chỉ định, hoặc tự động chọn tài xế rảnh cùng loại xe
-      const params = [trip.vehicle_type];
+      // Chọn tài xế được chỉ định, hoặc tự động chọn tài xế rảnh cùng loại xe.
+      // Bỏ qua tài xế đã từ chối chuyến này và tài xế chính là khách đặt chuyến.
+      const params = [trip.vehicle_type, trip.id, trip.customer_id];
       let cond = '';
       if (req.body.driver_id) {
         params.push(requireId(req.body.driver_id));
-        cond = 'AND id = $2';
+        cond = 'AND d.id = $4';
       }
       const d = await db.query(
-        `SELECT id, full_name FROM drivers
-          WHERE status = 'available' AND vehicle_type = $1 ${cond}
-          ORDER BY rating DESC, id LIMIT 1 FOR UPDATE SKIP LOCKED`,
+        `SELECT d.id, d.full_name FROM drivers d
+          WHERE d.status = 'available' AND d.vehicle_type = $1 ${cond}
+            AND NOT EXISTS (SELECT 1 FROM trip_driver_rejections r WHERE r.trip_id = $2 AND r.driver_id = d.id)
+            AND d.user_id IS DISTINCT FROM (SELECT u.id FROM users u WHERE u.customer_id = $3)
+          ORDER BY d.rating DESC, d.id LIMIT 1 FOR UPDATE OF d SKIP LOCKED`,
         params,
       );
-      if (!d.rows.length) throw new HttpError(409, 'Không có tài xế rảnh phù hợp với loại xe');
+      if (!d.rows.length) {
+        throw new HttpError(409, 'Không có tài xế rảnh phù hợp (cùng loại xe, chưa từ chối chuyến này)');
+      }
       driverId = d.rows[0].id;
       note = `Giao cho tài xế ${d.rows[0].full_name}`;
       await db.query(`UPDATE drivers SET status = 'on_trip' WHERE id = $1`, [driverId]);

@@ -7,6 +7,7 @@ const { HttpError } = require('./validate');
 const auth = require('./auth');
 const staff = require('./staff');
 const driverApply = require('./driver-apply');
+const driverMode = require('./driver-mode');
 const profile = require('./profile');
 const stats = require('./stats');
 const { router, TRIP_STATUSES, DRIVER_STATUSES } = require('./routes');
@@ -70,7 +71,7 @@ app.get('/metrics', async (req, res) => {
 
 app.use('/api/auth', auth.router);
 app.use('/api/admin', auth.authenticate, staff.router);
-app.use('/api', auth.authenticate, profile.router, driverApply.router, stats.router, router);
+app.use('/api', auth.authenticate, profile.router, driverApply.router, driverMode.router, stats.router, router);
 app.use(express.static(path.join(__dirname, '..', 'public'), { maxAge: '1h' }));
 
 app.use('/api', (req, res) => res.status(404).json({ error: 'Không tìm thấy API' }));

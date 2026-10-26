@@ -131,11 +131,13 @@
         <nav class="tabs" id="tabs" aria-label="Điều hướng chính">
           <span class="tab-indicator" aria-hidden="true"></span>
           <button class="tab" data-tab="dashboard" data-role="admin dispatcher"><span class="tab-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span><span class="tab-label">Tổng quan</span></button>
-          <button class="tab" data-tab="trips" data-role="admin dispatcher"><span class="tab-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M8.5 19H17a3.5 3.5 0 0 0 0-7H7a3.5 3.5 0 0 1 0-7h8.5"/></svg></span><span class="tab-label">Chuyến đi</span></button>
+          <button class="tab" data-tab="trips" data-role="admin dispatcher customer"><span class="tab-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M8.5 19H17a3.5 3.5 0 0 0 0-7H7a3.5 3.5 0 0 1 0-7h8.5"/></svg></span><span class="tab-label">Chuyến đi</span></button>
           <button class="tab" data-tab="drivers" data-role="admin dispatcher"><span class="tab-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M12 14v7M10 12H3.2M14 12h6.8"/></svg></span><span class="tab-label">Tài xế</span><b class="count hidden" id="pending-count"></b></button>
           <button class="tab" data-tab="customers" data-role="admin dispatcher"><span class="tab-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.3a6.5 6.5 0 0 1 3.5 5.7"/></svg></span><span class="tab-label">Khách hàng</span></button>
           <button class="tab" data-tab="staff" data-role="admin"><span class="tab-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span><span class="tab-label">Nhân viên</span></button>
           <button class="tab" data-tab="audit" data-role="admin"><span class="tab-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg></span><span class="tab-label">Nhật ký</span></button>
+          <!-- Chỉ hiện khi khách hàng đã là tài xế đối tác (xem renderDriverAccess trong app.js) -->
+          <button class="tab" data-tab="driver-mode" data-role="customer"><span class="tab-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M12 14v7M10 12H3.2M14 12h6.8"/></svg></span><span class="tab-label">Tài xế</span><b class="count hidden" id="driver-new-count"></b></button>
         </nav>
         <div class="user-menu">
           <button class="user-box" id="user-menu-btn" type="button" aria-haspopup="menu" aria-expanded="false">
@@ -154,7 +156,7 @@
             <button type="button" role="menuitem" data-menu="profile"><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span> Hồ sơ cá nhân</button>
             <button type="button" role="menuitem" data-menu="password"><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 20 3M16.5 6.5l3 3M14 9l2.5 2.5"/></svg></span> Đổi mật khẩu</button>
             <button type="button" role="menuitem" data-menu="sessions"><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span> Thiết bị đăng nhập</button>
-            <button type="button" role="menuitem" data-menu="driver" data-role="customer"><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 18H3.8a.8.8 0 0 1-.8-.8V13l2.1-5.6A2 2 0 0 1 7 6h10a2 2 0 0 1 1.9 1.4L21 13v4.2a.8.8 0 0 1-.8.8H19M3 13h18M9 18h6"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg></span> Đăng ký làm tài xế</button>
+            <button type="button" role="menuitem" data-menu="driver" data-role="customer"><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 18H3.8a.8.8 0 0 1-.8-.8V13l2.1-5.6A2 2 0 0 1 7 6h10a2 2 0 0 1 1.9 1.4L21 13v4.2a.8.8 0 0 1-.8.8H19M3 13h18M9 18h6"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg></span> <span id="menu-driver-label">Đăng ký làm tài xế</span></button>
             <div class="menu-sep"></div>
             <button type="button" role="menuitem" data-menu="logout" class="menu-danger"><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></span> Đăng xuất</button>
           </div>
@@ -370,6 +372,41 @@
             <button type="submit" class="btn primary lg" id="apply-submit" disabled>Gửi hồ sơ đăng ký</button>
           </div>
         </form>
+      </section>
+
+      <!-- CHẾ ĐỘ TÀI XẾ (khách hàng đã là tài xế đối tác) -->
+      <section id="driver-mode" class="panel">
+        <div class="page-head">
+          <div>
+            <h1>Chế độ tài xế</h1>
+            <p class="muted" id="driver-mode-sub"></p>
+          </div>
+          <button class="btn ghost sm" id="refresh-driver" data-icon="refresh"> Làm mới</button>
+        </div>
+
+        <div class="card driver-switch" id="driver-switch"></div>
+
+        <div class="stats driver-stats" id="driver-stats"></div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Chuyến của bạn</h2>
+          </div>
+          <div class="driver-jobs" id="driver-jobs"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Chuyến mới đang chờ tài xế <small class="muted" id="driver-open-count"></small></h2>
+            <span class="muted">Tự cập nhật mỗi 5 giây · ai nhận trước được trước</span>
+          </div>
+          <div class="driver-jobs" id="driver-open"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>Chuyến gần đây</h2></div>
+          <div class="table-wrap"><table class="grid" id="driver-recent"></table></div>
+        </div>
       </section>
 
       <!-- HỒ SƠ CÁ NHÂN (mọi vai trò) -->
