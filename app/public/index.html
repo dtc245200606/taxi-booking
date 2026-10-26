@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+  <a class="skip-link" href="#main">Bỏ qua tới nội dung chính</a>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <!-- ===================== ĐĂNG NHẬP / ĐĂNG KÝ ===================== -->
@@ -115,7 +116,6 @@
           <button type="button" class="btn ghost block" id="force-logout">Đăng xuất</button>
         </form>
       </div>
-      <p class="auth-foot muted">Đề 22 · Triển khai &amp; Quản trị hệ thống</p>
     </div>
   </section>
 
@@ -128,14 +128,14 @@
           <strong id="greeting-title"></strong>
           <span id="greeting-sub">Hôm nay bạn muốn đi đâu?</span>
         </div>
-        <nav class="tabs" id="tabs">
+        <nav class="tabs" id="tabs" aria-label="Điều hướng chính">
           <span class="tab-indicator" aria-hidden="true"></span>
-          <button class="tab" data-tab="dashboard" data-role="admin dispatcher"><span class="tab-icon">📊</span><span class="tab-label">Tổng quan</span></button>
-          <button class="tab" data-tab="trips" data-role="admin dispatcher"><span class="tab-icon">🧭</span><span class="tab-label">Chuyến đi</span></button>
-          <button class="tab" data-tab="drivers" data-role="admin dispatcher"><span class="tab-icon">🧑‍✈️</span><span class="tab-label">Tài xế </span><b class="count hidden" id="pending-count"></b></button>
-          <button class="tab" data-tab="customers" data-role="admin dispatcher"><span class="tab-icon">👥</span><span class="tab-label">Khách hàng</span></button>
-          <button class="tab" data-tab="staff" data-role="admin"><span class="tab-icon">🛡️</span><span class="tab-label">Nhân viên</span></button>
-          <button class="tab" data-tab="audit" data-role="admin"><span class="tab-icon">📜</span><span class="tab-label">Nhật ký</span></button>
+          <button class="tab" data-tab="dashboard" data-role="admin dispatcher"><span class="tab-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span><span class="tab-label">Tổng quan</span></button>
+          <button class="tab" data-tab="trips" data-role="admin dispatcher"><span class="tab-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M8.5 19H17a3.5 3.5 0 0 0 0-7H7a3.5 3.5 0 0 1 0-7h8.5"/></svg></span><span class="tab-label">Chuyến đi</span></button>
+          <button class="tab" data-tab="drivers" data-role="admin dispatcher"><span class="tab-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M12 14v7M10 12H3.2M14 12h6.8"/></svg></span><span class="tab-label">Tài xế</span><b class="count hidden" id="pending-count"></b></button>
+          <button class="tab" data-tab="customers" data-role="admin dispatcher"><span class="tab-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.3a6.5 6.5 0 0 1 3.5 5.7"/></svg></span><span class="tab-label">Khách hàng</span></button>
+          <button class="tab" data-tab="staff" data-role="admin"><span class="tab-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span><span class="tab-label">Nhân viên</span></button>
+          <button class="tab" data-tab="audit" data-role="admin"><span class="tab-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg></span><span class="tab-label">Nhật ký</span></button>
         </nav>
         <div class="user-menu">
           <button class="user-box" id="user-menu-btn" type="button" aria-haspopup="menu" aria-expanded="false">
@@ -144,25 +144,25 @@
               <strong id="user-name"></strong>
               <small id="user-role"></small>
             </span>
-            <span class="chev">▾</span>
+            <span class="chev" aria-hidden="true">▾</span>
           </button>
           <div class="menu hidden" id="user-menu" role="menu">
             <div class="menu-head">
               <strong id="menu-name"></strong>
               <small class="muted" id="menu-username"></small>
             </div>
-            <button type="button" role="menuitem" data-menu="profile"><span>👤</span> Hồ sơ cá nhân</button>
-            <button type="button" role="menuitem" data-menu="password"><span>🔑</span> Đổi mật khẩu</button>
-            <button type="button" role="menuitem" data-menu="sessions"><span>💻</span> Thiết bị đăng nhập</button>
-            <button type="button" role="menuitem" data-menu="driver" data-role="customer"><span>🚘</span> Đăng ký làm tài xế</button>
+            <button type="button" role="menuitem" data-menu="profile"><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span> Hồ sơ cá nhân</button>
+            <button type="button" role="menuitem" data-menu="password"><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 20 3M16.5 6.5l3 3M14 9l2.5 2.5"/></svg></span> Đổi mật khẩu</button>
+            <button type="button" role="menuitem" data-menu="sessions"><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span> Thiết bị đăng nhập</button>
+            <button type="button" role="menuitem" data-menu="driver" data-role="customer"><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 18H3.8a.8.8 0 0 1-.8-.8V13l2.1-5.6A2 2 0 0 1 7 6h10a2 2 0 0 1 1.9 1.4L21 13v4.2a.8.8 0 0 1-.8.8H19M3 13h18M9 18h6"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg></span> Đăng ký làm tài xế</button>
             <div class="menu-sep"></div>
-            <button type="button" role="menuitem" data-menu="logout" class="menu-danger"><span>🚪</span> Đăng xuất</button>
+            <button type="button" role="menuitem" data-menu="logout" class="menu-danger"><span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></span> Đăng xuất</button>
           </div>
         </div>
       </div>
     </header>
 
-    <main>
+    <main id="main" tabindex="-1">
       <!-- TỔNG QUAN -->
       <section id="dashboard" class="panel">
         <div class="page-head">
@@ -170,7 +170,7 @@
             <h1>Tổng quan hệ thống</h1>
             <p class="muted">Tình hình điều phối xe trong ngày</p>
           </div>
-          <button class="btn ghost sm" id="refresh-dashboard">↻ Làm mới</button>
+          <button class="btn ghost sm" id="refresh-dashboard"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg> Làm mới</button>
         </div>
         <div class="stats" id="stat-cards"></div>
         <div class="card">
@@ -523,7 +523,7 @@
       </section>
     </main>
 
-    <footer>Đề 22 · Hệ thống Đặt xe / Taxi Booking · Triển khai &amp; Quản trị hệ thống</footer>
+    <footer>Hệ thống Đặt xe / Taxi Booking</footer>
   </div>
 
   <!-- Hộp thoại hủy chuyến -->
