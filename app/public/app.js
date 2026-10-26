@@ -10,9 +10,9 @@ const STATUS_TEXT = {
   offline: "Nghỉ",
 };
 const VEHICLE_TEXT = {
-  bike: "🛵 Xe máy",
-  car4: "🚗 Ô tô 4 chỗ",
-  car7: "🚙 Ô tô 7 chỗ",
+  bike: "Xe máy",
+  car4: "Ô tô 4 chỗ",
+  car7: "Ô tô 7 chỗ",
 };
 // Bảng giá giống server (src/routes.js) - chỉ để hiển thị giá ước tính, server vẫn tự tính lại
 const FARE = {
@@ -54,6 +54,141 @@ function el(tag, attrs = {}, ...children) {
   });
   return node;
 }
+
+// Bộ icon SVG nét mảnh dùng chung (thay cho emoji). Mỗi icon là danh sách hình:
+// "M..." = path, "c:cx,cy,r" = circle, "r:x,y,w,h,rx" = rect. Tạo bằng createElementNS, không dùng innerHTML.
+const ICONS = {
+  dot: ["c:12,12,3"],
+  clock: ["c:12,12,9", "M12 7v5l3 2"],
+  car: [
+    "M5 17H3.8a.8.8 0 0 1-.8-.8v-3.7l2.1-5.1A2 2 0 0 1 7 6h10a2 2 0 0 1 1.9 1.4l2.1 5.1v3.7a.8.8 0 0 1-.8.8H19",
+    "M3 12.5h18",
+    "M9 17h6",
+    "c:7,17,2",
+    "c:17,17,2",
+  ],
+  bike: [
+    "c:5.5,17,2.5",
+    "c:18.5,17,2.5",
+    "M8 17h7.5l2.5-6.5",
+    "M14 5h3l1.5 6",
+    "M3 13.5h6.5l2 3.5",
+  ],
+  van: [
+    "M3 16.5V8a2 2 0 0 1 2-2h10l4.5 5h.5a1 1 0 0 1 1 1v4.5a.5.5 0 0 1-.5.5H19",
+    "M5 17H3.5a.5.5 0 0 1-.5-.5",
+    "M9 17h6",
+    "M3 11h18",
+    "M11 6v5",
+    "c:7,17,2",
+    "c:17,17,2",
+  ],
+  "check-circle": ["c:12,12,9", "M8 12.5l2.8 2.8L16 9.5"],
+  "x-circle": ["c:12,12,9", "M9 9l6 6M15 9l-6 6"],
+  x: ["M6 6l12 12M18 6L6 18"],
+  check: ["M5 12.5l4.5 4.5L19 7.5"],
+  steering: ["c:12,12,9", "c:12,12,2", "M12 14v7M10 12H3.2M14 12h6.8"],
+  users: [
+    "c:9,8,3.5",
+    "M2.5 20a6.5 6.5 0 0 1 13 0",
+    "M16 4.6a3.5 3.5 0 0 1 0 6.8",
+    "M18 14.3a6.5 6.5 0 0 1 3.5 5.7",
+  ],
+  user: ["c:12,8,4", "M4 21a8 8 0 0 1 16 0"],
+  "user-plus": ["c:9,8,4", "M2 21a7 7 0 0 1 14 0", "M19 8v6M16 11h6"],
+  wallet: [
+    "M19 7V5a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V6",
+    "M21 12h-4a1.5 1.5 0 0 0 0 3h4",
+  ],
+  inbox: [
+    "M3 13h5l1.5 3h5l1.5-3h5",
+    "M5.5 5h13L21 13v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6z",
+  ],
+  "map-pin": [
+    "M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z",
+    "c:12,9.5,2.5",
+  ],
+  map: ["M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z", "M9 4v14M15 6v14"],
+  locate: ["c:12,12,7", "c:12,12,2", "M12 2v3M12 19v3M2 12h3M19 12h3"],
+  receipt: [
+    "M5 3h14v18l-2.5-1.5L14 21l-2-1.5-2 1.5-2.5-1.5L5 21z",
+    "M9 8h6M9 12h6M9 16h3",
+  ],
+  lock: ["r:4,10.5,16,10.5,2", "M8 10.5V7a4 4 0 0 1 8 0v3.5"],
+  unlock: ["r:4,10.5,16,10.5,2", "M8 10.5V7a4 4 0 0 1 7.6-1.7"],
+  key: ["c:7.5,15.5,4.5", "M10.7 12.3L20 3M16.5 6.5l3 3M14 9l2.5 2.5"],
+  login: [
+    "M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4",
+    "M10 17l5-5-5-5",
+    "M15 12H3",
+  ],
+  logout: [
+    "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4",
+    "M16 17l5-5-5-5",
+    "M21 12H9",
+  ],
+  ban: ["c:12,12,9", "M5.6 5.6l12.8 12.8"],
+  mail: ["r:3,5,18,14,2", "M3 7l9 6 9-6"],
+  edit: ["M4 20h4L19 9l-4-4L4 16z", "M14 6l4 4"],
+  shield: [
+    "M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z",
+    "M9 12l2 2 4-4",
+  ],
+  refresh: ["M21 12a9 9 0 1 1-2.6-6.4", "M21 4v5h-5"],
+  power: ["M12 3v8", "M6.4 6.6a8 8 0 1 0 11.2 0"],
+  play: ["c:12,12,9", "M10 8.5l5 3.5-5 3.5z"],
+  route: [
+    "c:6,19,2.5",
+    "c:18,5,2.5",
+    "M8.5 19H17a3.5 3.5 0 0 0 0-7H7a3.5 3.5 0 0 1 0-7h8.5",
+  ],
+  file: [
+    "M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z",
+    "M14 3v6h6",
+    "M8 13h8M8 17h5",
+  ],
+  undo: ["M9 14L4 9l5-5", "M4 9h10.5a5.5 5.5 0 0 1 0 11H11"],
+  "id-card": [
+    "r:3,5,18,14,2",
+    "c:9,11,2.5",
+    "M5.5 16.5a3.5 3.5 0 0 1 7 0",
+    "M15 10h4M15 14h3",
+  ],
+  swap: ["M7 4L3 8l4 4", "M3 8h14", "M17 20l4-4-4-4", "M21 16H7"],
+  alert: ["M12 3.5L2.5 20h19z", "M12 10v4.5", "M12 17.5v.01"],
+  "arrow-left": ["M19 12H5", "M11 6l-6 6 6 6"],
+};
+function icon(name, cls = "") {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("class", `ico ${cls}`.trim());
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+  (ICONS[name] || ICONS.dot).forEach((s) => {
+    let node;
+    if (s.startsWith("c:")) {
+      const [cx, cy, r] = s.slice(2).split(",");
+      node = document.createElementNS(NS, "circle");
+      Object.entries({ cx, cy, r }).forEach(([k, v]) =>
+        node.setAttribute(k, v),
+      );
+    } else if (s.startsWith("r:")) {
+      const [x, y, width, height, rx] = s.slice(2).split(",");
+      node = document.createElementNS(NS, "rect");
+      Object.entries({ x, y, width, height, rx }).forEach(([k, v]) =>
+        node.setAttribute(k, v),
+      );
+    } else {
+      node = document.createElementNS(NS, "path");
+      node.setAttribute("d", s);
+    }
+    svg.append(node);
+  });
+  return svg;
+}
+// Icon cho phần tử tĩnh trong HTML: <span data-icon="car"></span>
+$$("[data-icon]").forEach((n) => n.prepend(icon(n.dataset.icon)));
 
 const badge = (s) => el("span", { class: `badge s-${s}` }, STATUS_TEXT[s] || s);
 const person = (name, sub) =>
@@ -137,7 +272,7 @@ function table(target, headers, rows, emptyText = "Chưa có dữ liệu") {
             el(
               "td",
               { colspan: headers.length, class: "empty" },
-              el("span", { class: "empty-icon" }, "🗂️"),
+              el("span", { class: "empty-icon" }, icon("inbox")),
               emptyText,
             ),
           ),
@@ -212,19 +347,19 @@ function onLogin(user) {
 
 const AUTH_TEXT = {
   login: [
-    "Chào mừng trở lại 👋",
+    "Chào mừng trở lại",
     "Đăng nhập để đặt xe và theo dõi chuyến đi của bạn.",
   ],
   register: [
-    "Tạo tài khoản mới ✨",
+    "Tạo tài khoản mới",
     "Chỉ mất một phút để bắt đầu đặt chuyến đầu tiên.",
   ],
-  force: ["Đặt mật khẩu mới 🔐", "Bước bắt buộc trước khi sử dụng hệ thống."],
+  force: ["Đặt mật khẩu mới", "Bước bắt buộc trước khi sử dụng hệ thống."],
   forgot: [
-    "Quên mật khẩu? 🔑",
+    "Quên mật khẩu?",
     "Nhập email bạn đã đăng ký, chúng tôi sẽ gửi liên kết đặt lại mật khẩu.",
   ],
-  reset: ["Đặt mật khẩu mới 🔐", "Chọn mật khẩu mới cho tài khoản của bạn."],
+  reset: ["Đặt mật khẩu mới", "Chọn mật khẩu mới cho tài khoản của bạn."],
 };
 const AUTH_FORMS = ["login", "register", "force", "forgot", "reset"];
 
@@ -280,11 +415,18 @@ async function loadDashboard() {
   const t = s.trips;
   // Dòng phụ ghi rõ phạm vi của từng số (ngay lúc này / từ trước tới nay / hôm nay) để không bị so lệch
   const cards = [
-    ["Chờ tài xế", t.requested || 0, "⏳", "orange", "waiting", "ngay lúc này"],
+    [
+      "Chờ tài xế",
+      t.requested || 0,
+      "clock",
+      "orange",
+      "waiting",
+      "ngay lúc này",
+    ],
     [
       "Đang phục vụ",
       (t.assigned || 0) + (t.in_progress || 0),
-      "🚖",
+      "car",
       "violet",
       "serving",
       `${t.assigned || 0} đang đón · ${t.in_progress || 0} đang chạy`,
@@ -292,16 +434,23 @@ async function loadDashboard() {
     [
       "Hoàn thành",
       t.completed || 0,
-      "✅",
+      "check-circle",
       "green",
       "completed",
       "từ trước tới nay",
     ],
-    ["Đã hủy", t.cancelled || 0, "✖️", "gray", "cancelled", "từ trước tới nay"],
+    [
+      "Đã hủy",
+      t.cancelled || 0,
+      "x-circle",
+      "gray",
+      "cancelled",
+      "từ trước tới nay",
+    ],
     [
       "Tài xế sẵn sàng",
       s.drivers.available || 0,
-      "🧑‍✈️",
+      "steering",
       "blue",
       "drivers",
       `trên tổng ${s.driversTotal} tài xế`,
@@ -309,7 +458,7 @@ async function loadDashboard() {
     [
       "Khách hàng",
       s.customers,
-      "👥",
+      "users",
       "amber",
       "customers",
       `${s.customersWithAccount} có tài khoản`,
@@ -317,14 +466,14 @@ async function loadDashboard() {
     [
       "Doanh thu hôm nay",
       money(s.revenueToday),
-      "💰",
+      "wallet",
       "amber highlight",
       "revenue",
       `${s.completedToday} chuyến hoàn thành hôm nay`,
     ],
   ];
   $("#stat-cards").replaceChildren(
-    ...cards.map(([label, value, icon, tone, metric, sub], i) => {
+    ...cards.map(([label, value, ic, tone, metric, sub], i) => {
       const card = el(
         "div",
         {
@@ -340,7 +489,7 @@ async function loadDashboard() {
             }
           },
         },
-        el("div", { class: "stat-icon" }, icon),
+        el("div", { class: "stat-icon" }, icon(ic)),
         el(
           "div",
           {},
@@ -374,41 +523,41 @@ async function loadDashboard() {
 const DETAIL = {
   waiting: {
     title: "Chờ tài xế",
-    icon: "⏳",
+    icon: "clock",
     sub: "Khách đang chờ và lượng tài xế rảnh theo loại xe",
   },
   serving: {
     title: "Đang phục vụ",
-    icon: "🚖",
+    icon: "car",
     sub: "Các chuyến đã có tài xế, đang đón hoặc đang chạy",
   },
   completed: {
     title: "Chuyến hoàn thành",
-    icon: "✅",
+    icon: "check-circle",
     sub: "Hiệu suất, tài xế và khách hàng nổi bật",
     period: "all",
   },
   cancelled: {
     title: "Chuyến bị hủy",
-    icon: "✖️",
+    icon: "x-circle",
     sub: "Tỉ lệ hủy, lý do và đối tượng liên quan",
     period: "all",
   },
   drivers: {
     title: "Tài xế",
-    icon: "🧑‍✈️",
+    icon: "steering",
     sub: "Trạng thái và hiệu suất từng tài xế",
     period: "today",
   },
   customers: {
     title: "Khách hàng",
-    icon: "👥",
+    icon: "users",
     sub: "Tăng trưởng, mức độ hoạt động và chi tiêu",
     period: "30d",
   },
   revenue: {
     title: "Doanh thu",
-    icon: "💰",
+    icon: "wallet",
     sub: "Doanh thu theo thời gian, loại xe, tài xế và khách hàng",
     period: "today",
   },
@@ -761,11 +910,11 @@ const RENDER = {
             { v: VEHICLE_TEXT[x.vehicle_type], cls: "num" },
             { v: money(x.fare), cls: "num" },
             w > 10
-              ? el("span", { class: "badge s-pending" }, `⚠ ${minutes(w)}`)
+              ? el("span", { class: "badge s-pending" }, minutes(w))
               : { v: minutes(w), cls: "num" },
           ];
         }),
-        "Không có khách nào đang chờ 🎉",
+        "Không có khách nào đang chờ",
       ),
     ),
   ],
@@ -1054,7 +1203,7 @@ async function loadDetail() {
 function openDetail(metric) {
   const cfg = DETAIL[metric];
   detailState = { metric, period: cfg.period || null };
-  $("#detail-icon").textContent = cfg.icon;
+  $("#detail-icon").replaceChildren(icon(cfg.icon));
   $("#detail-title").textContent = cfg.title;
   $("#detail-sub").textContent = cfg.sub;
   $("#detail-period").classList.toggle("hidden", !cfg.period);
@@ -1243,6 +1392,139 @@ function updateFare() {
   void out.offsetWidth; // khởi động lại animation
   out.classList.add("bump");
 }
+
+// ---------- Chờ tìm tài xế (khách hàng vừa đặt xe) ----------
+// Hỏi trạng thái chuyến định kỳ qua GET /trips/:id; có tài xế nhận (hoặc chuyến bị hủy) thì dừng và báo kết quả.
+const SEARCH_POLL_MS = 4000;
+let tripSearch = null; // { id, startedAt, poll, tick }
+
+function stopTripSearch() {
+  if (!tripSearch) return;
+  clearInterval(tripSearch.poll);
+  clearInterval(tripSearch.tick);
+  tripSearch = null;
+}
+
+function renderSearchTimer() {
+  if (!tripSearch) return;
+  const s = Math.floor((Date.now() - tripSearch.startedAt) / 1000);
+  $("#search-timer").textContent =
+    `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  if (s === 60)
+    $("#search-sub").textContent =
+      "Giờ cao điểm có thể lâu hơn một chút, cảm ơn bạn đã kiên nhẫn chờ";
+}
+
+function setSearchView(state, title, sub) {
+  $("#search-dialog").dataset.state = state;
+  $("#search-title").textContent = title;
+  $("#search-sub").textContent = sub;
+  const searching = state === "searching";
+  $("#search-hide").classList.toggle("hidden", !searching);
+  $("#search-cancel").classList.toggle("hidden", !searching);
+  $("#search-done").classList.toggle("hidden", searching);
+  $("#search-timer").classList.toggle("hidden", !searching);
+}
+
+function openTripSearch(trip) {
+  stopTripSearch();
+  const dlg = $("#search-dialog");
+  $("#search-icon").replaceChildren(icon("car"));
+  setSearchView(
+    "searching",
+    "Đang tìm tài xế…",
+    "Hệ thống đang kết nối bạn với tài xế phù hợp gần nhất",
+  );
+  $("#search-driver").classList.add("hidden");
+  $("#search-driver").replaceChildren();
+  $("#search-trip").replaceChildren(
+    route(trip.pickup_address, trip.dropoff_address),
+    el(
+      "div",
+      { class: "search-meta" },
+      el(
+        "span",
+        {},
+        `#${trip.id} · ${VEHICLE_TEXT[trip.vehicle_type]} · ${trip.distance_km} km`,
+      ),
+      el("strong", {}, money(trip.fare)),
+    ),
+  );
+  tripSearch = { id: trip.id, startedAt: Date.now() };
+  renderSearchTimer();
+  tripSearch.tick = setInterval(renderSearchTimer, 1000);
+  tripSearch.poll = setInterval(pollTripSearch, SEARCH_POLL_MS);
+  if (!dlg.open) dlg.showModal();
+}
+
+async function pollTripSearch() {
+  const id = tripSearch?.id;
+  if (!id) return;
+  try {
+    const t = await api(`/trips/${id}`);
+    if (tripSearch?.id !== id || t.status === "requested") return;
+    finishTripSearch(t);
+  } catch {
+    // Phiên hết hạn -> api() đã đưa về màn hình đăng nhập; lỗi mạng tạm thời thì thử lại ở lần sau
+    if ($("#app").classList.contains("hidden")) $("#search-dialog").close();
+  }
+}
+
+function finishTripSearch(t) {
+  stopTripSearch();
+  loadTrips().catch(() => {});
+  if (t.status === "cancelled") {
+    $("#search-icon").replaceChildren(icon("x-circle"));
+    setSearchView(
+      "cancelled",
+      "Chuyến đi đã bị hủy",
+      t.cancel_reason || "Rất tiếc, chưa tìm được tài xế cho chuyến này",
+    );
+    return;
+  }
+  $("#search-icon").replaceChildren(icon("check-circle"));
+  setSearchView(
+    "found",
+    "Đã tìm thấy tài xế!",
+    t.status === "assigned"
+      ? "Tài xế đang trên đường tới điểm đón, vui lòng chuẩn bị"
+      : "Chuyến đi của bạn đã bắt đầu",
+  );
+  $("#search-driver").replaceChildren(
+    person(t.driver_name, "Tài xế của bạn"),
+    t.license_plate ? el("span", { class: "plate" }, t.license_plate) : null,
+  );
+  $("#search-driver").classList.remove("hidden");
+}
+
+$("#search-dialog").addEventListener("close", stopTripSearch);
+$("#search-done").addEventListener("click", () => $("#search-dialog").close());
+$("#search-hide").addEventListener("click", () => {
+  const id = tripSearch?.id;
+  $("#search-dialog").close();
+  if (id)
+    toast(
+      `Chuyến #${id} vẫn đang tìm tài xế, theo dõi trong danh sách bên dưới`,
+    );
+});
+$("#search-cancel").addEventListener("click", async (e) => {
+  const btn = e.currentTarget;
+  const id = tripSearch?.id;
+  if (!id) return;
+  const reason = await askCancelReason(id);
+  if (reason === null) return;
+  try {
+    await withBusy(btn, () =>
+      api(`/trips/${id}/cancel`, { method: "POST", body: { reason } }),
+    );
+    $("#search-dialog").close();
+    toast(`Đã hủy chuyến #${id}`);
+    loadTrips().catch(() => {});
+  } catch (err) {
+    toast(err.message, true);
+    pollTripSearch(); // có thể tài xế vừa nhận chuyến -> cập nhật lại màn hình
+  }
+});
 
 // ---------- Chọn địa điểm trên bản đồ ----------
 // Bản đồ OpenStreetMap (Leaflet), tìm địa chỉ bằng Nominatim, tính quãng đường theo đường đi bằng OSRM.
@@ -1687,11 +1969,11 @@ function applicationStatusCard(a) {
       ["Ngày nộp", time(a.created_at)],
     ].map(([k, v]) => el("div", {}, el("span", {}, k), el("strong", {}, v))),
   );
-  const card = (cls, icon, title, desc, ...extra) =>
+  const card = (cls, ic, title, desc, ...extra) =>
     el(
       "div",
       { class: `card status-card ${cls}` },
-      el("div", { class: "status-icon" }, icon),
+      el("div", { class: "status-icon" }, icon(ic)),
       el(
         "div",
         {},
@@ -1704,7 +1986,7 @@ function applicationStatusCard(a) {
   if (a.status === "pending") {
     return card(
       "pending",
-      "⏳",
+      "clock",
       "Hồ sơ đang chờ duyệt",
       "Nhân viên sẽ kiểm tra thông tin và liên hệ với bạn qua số điện thoại đã đăng ký.",
       info,
@@ -1745,7 +2027,7 @@ function applicationStatusCard(a) {
   if (a.status === "approved") {
     return card(
       "approved",
-      "🎉",
+      "check-circle",
       "Chúc mừng! Bạn đã là tài xế đối tác",
       `Hồ sơ được duyệt ngày ${dateOnly(a.reviewed_at)}. Tổng đài sẽ bật nhận chuyến cho bạn sau khi ký hợp đồng.`,
       info,
@@ -1765,7 +2047,7 @@ function applicationStatusCard(a) {
   if (a.status === "rejected") {
     return card(
       "rejected",
-      "❌",
+      "x-circle",
       "Hồ sơ trước đã bị từ chối",
       `Lý do: ${a.review_note || "—"}. Bạn có thể chỉnh sửa và nộp lại hồ sơ bên dưới.`,
     );
@@ -1815,7 +2097,7 @@ $("#apply-form").addEventListener("submit", async (e) => {
     form.reset();
     updateLicenseOptions();
     updateTermsState();
-    toast("🎉 Đã gửi hồ sơ! Chúng tôi sẽ liên hệ với bạn sớm");
+    toast("Đã gửi hồ sơ. Chúng tôi sẽ liên hệ với bạn sớm");
     loadBecomeDriver();
     window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (err) {
@@ -1875,7 +2157,7 @@ function applicationActions(a) {
           }
         },
       },
-      "✓ Duyệt",
+      "Duyệt",
     ),
     el(
       "button",
@@ -1904,7 +2186,7 @@ function applicationActions(a) {
           }
         },
       },
-      "✕ Từ chối",
+      "Từ chối",
     ),
   );
 }
@@ -2021,7 +2303,7 @@ function staffActions(s) {
     );
   const name = `${s.full_name} (${s.username})`;
   const list = [
-    btn("♻ Đặt lại MK", "", {
+    btn("Đặt lại MK", "", {
       title: "Đặt lại mật khẩu?",
       message: `Hệ thống sẽ cấp mật khẩu tạm mới cho ${name} và đăng xuất họ khỏi mọi thiết bị.`,
       okLabel: "Đặt lại",
@@ -2036,7 +2318,7 @@ function staffActions(s) {
   ];
   if (s.active_sessions > 0 && s.is_active) {
     list.push(
-      btn("📴 Thu hồi phiên", "", {
+      btn("Thu hồi phiên", "", {
         title: "Thu hồi phiên đăng nhập?",
         message: `${name} đang đăng nhập trên ${s.active_sessions} phiên. Tất cả sẽ bị đăng xuất.`,
         okLabel: "Đăng xuất tất cả",
@@ -2047,7 +2329,7 @@ function staffActions(s) {
   }
   list.push(
     s.is_active
-      ? btn("🔒 Khóa", "danger", {
+      ? btn("Khóa", "danger", {
           title: "Khóa tài khoản?",
           message: `${name} sẽ bị đăng xuất ngay và không thể đăng nhập cho tới khi được mở khóa.`,
           okLabel: "Khóa tài khoản",
@@ -2108,42 +2390,42 @@ async function loadStaff() {
 
 // ---------- Nhật ký hoạt động (admin) ----------
 const ACTION_TEXT = {
-  login: ["🔓", "Đăng nhập", "ok"],
-  login_failed: ["⛔", "Đăng nhập sai", "warn"],
-  login_blocked: ["🚫", "Đăng nhập khi bị khóa", "warn"],
-  logout: ["🚪", "Đăng xuất"],
-  register: ["🆕", "Đăng ký tài khoản", "ok"],
-  password_change: ["🔑", "Đổi mật khẩu", "ok"],
-  password_change_failed: ["⛔", "Đổi mật khẩu thất bại", "warn"],
-  password_reset_request: ["📧", "Yêu cầu đặt lại mật khẩu"],
-  password_reset: ["🔑", "Đặt lại mật khẩu qua email", "ok"],
-  staff_create: ["👤", "Tạo nhân viên", "ok"],
-  staff_update: ["✏️", "Sửa thông tin nhân viên"],
-  staff_role_change: ["🛡️", "Đổi vai trò"],
-  staff_lock: ["🔒", "Khóa tài khoản", "warn"],
-  staff_unlock: ["🔓", "Mở khóa tài khoản", "ok"],
-  staff_password_reset: ["♻️", "Đặt lại mật khẩu"],
-  staff_revoke_sessions: ["📴", "Thu hồi phiên đăng nhập"],
-  trip_create: ["🧭", "Đặt chuyến"],
-  trip_assign: ["🚖", "Điều tài xế"],
-  trip_start: ["▶️", "Bắt đầu chuyến"],
-  trip_complete: ["✅", "Hoàn thành chuyến", "ok"],
-  trip_cancel: ["✖️", "Hủy chuyến", "warn"],
-  driver_create: ["🧑‍✈️", "Thêm tài xế"],
-  driver_status: ["🔁", "Đổi trạng thái tài xế"],
-  driver_apply: ["📝", "Nộp hồ sơ làm tài xế"],
-  driver_apply_cancel: ["↩️", "Rút hồ sơ tài xế"],
-  driver_apply_approve: ["✅", "Duyệt hồ sơ tài xế", "ok"],
-  driver_apply_reject: ["❌", "Từ chối hồ sơ tài xế", "warn"],
-  profile_update: ["🪪", "Cập nhật hồ sơ cá nhân"],
+  login: ["login", "Đăng nhập", "ok"],
+  login_failed: ["ban", "Đăng nhập sai", "warn"],
+  login_blocked: ["lock", "Đăng nhập khi bị khóa", "warn"],
+  logout: ["logout", "Đăng xuất"],
+  register: ["user-plus", "Đăng ký tài khoản", "ok"],
+  password_change: ["key", "Đổi mật khẩu", "ok"],
+  password_change_failed: ["ban", "Đổi mật khẩu thất bại", "warn"],
+  password_reset_request: ["mail", "Yêu cầu đặt lại mật khẩu"],
+  password_reset: ["key", "Đặt lại mật khẩu qua email", "ok"],
+  staff_create: ["user-plus", "Tạo nhân viên", "ok"],
+  staff_update: ["edit", "Sửa thông tin nhân viên"],
+  staff_role_change: ["shield", "Đổi vai trò"],
+  staff_lock: ["lock", "Khóa tài khoản", "warn"],
+  staff_unlock: ["unlock", "Mở khóa tài khoản", "ok"],
+  staff_password_reset: ["refresh", "Đặt lại mật khẩu"],
+  staff_revoke_sessions: ["power", "Thu hồi phiên đăng nhập"],
+  trip_create: ["route", "Đặt chuyến"],
+  trip_assign: ["car", "Điều tài xế"],
+  trip_start: ["play", "Bắt đầu chuyến"],
+  trip_complete: ["check-circle", "Hoàn thành chuyến", "ok"],
+  trip_cancel: ["x-circle", "Hủy chuyến", "warn"],
+  driver_create: ["steering", "Thêm tài xế"],
+  driver_status: ["swap", "Đổi trạng thái tài xế"],
+  driver_apply: ["file", "Nộp hồ sơ làm tài xế"],
+  driver_apply_cancel: ["undo", "Rút hồ sơ tài xế"],
+  driver_apply_approve: ["check-circle", "Duyệt hồ sơ tài xế", "ok"],
+  driver_apply_reject: ["x-circle", "Từ chối hồ sơ tài xế", "warn"],
+  profile_update: ["id-card", "Cập nhật hồ sơ cá nhân"],
   profile_update_failed: [
-    "⛔",
+    "ban",
     "Cập nhật hồ sơ thất bại (sai mật khẩu)",
     "warn",
   ],
-  session_revoke: ["📴", "Đăng xuất một thiết bị"],
-  session_revoke_others: ["📴", "Đăng xuất mọi thiết bị khác"],
-  customer_create: ["👥", "Thêm khách hàng"],
+  session_revoke: ["power", "Đăng xuất một thiết bị"],
+  session_revoke_others: ["power", "Đăng xuất mọi thiết bị khác"],
+  customer_create: ["users", "Thêm khách hàng"],
 };
 const TARGET_TEXT = {
   trip: "Chuyến",
@@ -2201,7 +2483,7 @@ async function loadAudit(append = false) {
   );
 
   const rows = items.map((a) => {
-    const [icon, label, tone] = ACTION_TEXT[a.action] || ["•", a.action];
+    const [ic, label, tone] = ACTION_TEXT[a.action] || ["dot", a.action];
     return [
       { v: time(a.at), cls: "num muted" },
       a.username
@@ -2215,7 +2497,7 @@ async function loadAudit(append = false) {
       el(
         "span",
         { class: `act ${tone || ""}` },
-        el("span", { class: "act-icon" }, icon),
+        el("span", { class: "act-icon" }, icon(ic)),
         label,
       ),
       a.target_type
@@ -2379,14 +2661,19 @@ $("#map-locate").addEventListener("click", () => {
 $("#map-ok").addEventListener("click", applyMapPoints);
 $("#map-cancel").addEventListener("click", () => $("#map-dialog").close());
 $("#map-close").addEventListener("click", () => $("#map-dialog").close());
-bindForm(
-  "#trip-form",
-  saveAndReload(
-    "/trips",
-    "🚕 Đặt xe thành công! Đang tìm tài xế cho bạn.",
-    loadTrips,
-  ),
-);
+bindForm("#trip-form", async (body, form) => {
+  // Điều phối viên đặt hộ: giữ như cũ. Khách hàng: mở màn hình chờ tìm tài xế
+  if (isStaff())
+    return saveAndReload(
+      "/trips",
+      "Đặt xe thành công. Đang tìm tài xế cho khách.",
+      loadTrips,
+    )(body, form);
+  const trip = await api("/trips", { method: "POST", body });
+  form.reset();
+  loadTrips().catch(() => {});
+  openTripSearch(trip);
+});
 bindForm(
   "#driver-form",
   saveAndReload("/drivers", "Đã thêm tài xế", loadDrivers),
@@ -2485,9 +2772,8 @@ function renderGreeting() {
         : h < 18
           ? "buổi chiều"
           : "buổi tối";
-  const icon = h < 11 ? "☀️" : h < 13 ? "🌤️" : h < 18 ? "👋" : "🌙";
   const name = String(currentUser.full_name).trim().split(/\s+/).pop();
-  $("#greeting-title").textContent = `Chào ${part}, ${name} ${icon}`;
+  $("#greeting-title").textContent = `Chào ${part}, ${name}`;
 }
 
 // Nút / logo chuyển trang
@@ -2566,7 +2852,7 @@ function renderProfile(p) {
   $("#profile-driver").replaceChildren(
     ...(p.driver
       ? [
-          el("span", { class: "badge s-active" }, "🚘 Tài xế đối tác"),
+          el("span", { class: "badge s-active" }, "Tài xế đối tác"),
           " ",
           el(
             "span",
@@ -2724,7 +3010,7 @@ $("#temp-copy").addEventListener("click", async (e) => {
   const btn = e.currentTarget;
   try {
     await navigator.clipboard.writeText($("#temp-password").textContent);
-    btn.textContent = "Đã sao chép ✓";
+    btn.textContent = "Đã sao chép";
   } catch {
     toast("Không sao chép được, hãy chọn và copy thủ công", true);
   }
@@ -2736,7 +3022,7 @@ bindForm("#staff-form", async (body, form) => {
   form.reset();
   loadStaff();
   showTempPassword(
-    "Đã tạo tài khoản 🎉",
+    "Đã tạo tài khoản",
     `${s.full_name} · @${s.username} · Điều phối viên`,
     s.temp_password,
   );

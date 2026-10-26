@@ -1060,6 +1060,87 @@ table.grid:empty {
 .modal::backdrop { background: rgba(11, 31, 58, .55); }
 .modal h3 { font-size: 18px; font-weight: 700; }
 
+/* ---------- Icon SVG thay cho emoji ---------- */
+:root { --amber-ink: #a16207; }
+@media (prefers-color-scheme: dark) { :root { --amber-ink: #fcd34d; } }
+.logo { color: #1a1300; }
+.logo .ico { width: 22px; height: 22px; stroke-width: 2; }
+.hero-points span { color: var(--primary); }
+.hero-car { color: var(--primary); }
+.hero-car .ico { width: 40px; height: 40px; stroke-width: 1.6; }
+.btn .ico, .link-btn .ico { width: 16px; height: 16px; }
+.link-btn { display: inline-flex; align-items: center; gap: 4px; }
+.map-open { display: grid; place-items: center; color: var(--amber-ink); }
+.v-icon { display: grid; place-items: center; height: 34px; color: var(--label); }
+.v-icon .ico { width: 30px; height: 30px; stroke-width: 1.6; }
+.vehicle:has(input:checked) .v-icon { color: var(--amber-ink); }
+.promo-icon { color: var(--amber-ink); }
+.promo-icon .ico { width: 26px; height: 26px; }
+.warn-note { display: flex; gap: 8px; align-items: flex-start; }
+.warn-note .ico { width: 16px; height: 16px; margin-top: 2px; color: var(--orange-ink); }
+.dot { display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 50%; vertical-align: 1px; }
+.dot.from { background: var(--green); }
+.dot.to { background: var(--red); border-radius: 2px; }
+.empty-icon { color: var(--muted); }
+.empty-icon .ico { width: 26px; height: 26px; stroke-width: 1.6; }
+
+.stat.tone-orange { --tone-ink: var(--orange-ink); }
+.stat.tone-blue   { --tone-ink: var(--blue-ink); }
+.stat.tone-green  { --tone-ink: var(--green-ink); }
+.stat.tone-gray   { --tone-ink: var(--gray-ink); }
+.stat.tone-violet { --tone-ink: var(--violet-ink); }
+.stat.tone-amber  { --tone-ink: var(--amber-ink); }
+.stat .stat-icon { color: var(--tone-ink, var(--gray-ink)); }
+.stat-icon .ico { width: 24px; height: 24px; }
+.stat.highlight .stat-icon { color: var(--primary); }
+.detail-title .stat-icon { color: var(--amber-ink); }
+.status-icon .ico { width: 28px; height: 28px; }
+.status-card.pending .status-icon { color: var(--orange-ink); }
+.status-card.approved .status-icon { color: var(--green-ink); }
+.status-card.rejected .status-icon { color: var(--red-ink); }
+.act-icon { color: var(--gray-ink); }
+.act-icon .ico { width: 15px; height: 15px; }
+.act.warn .act-icon { color: var(--red-ink); }
+.act.ok .act-icon { color: var(--green-ink); }
+
+/* ---------- Màn hình chờ tìm tài xế ---------- */
+.modal.search-modal { width: min(440px, calc(100vw - 24px)); padding: 28px 24px 22px; text-align: center; }
+.modal.search-modal[open] { display: flex; flex-direction: column; align-items: stretch; gap: 14px; }
+.search-radar { position: relative; width: 150px; height: 150px; margin: 0 auto 4px; display: grid; place-items: center; }
+.radar-ring {
+  position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--primary);
+  background: radial-gradient(circle, rgba(245, 179, 1, .16), transparent 70%);
+  opacity: 0; animation: radar 2.4s cubic-bezier(.2, .6, .3, 1) infinite;
+}
+.radar-ring:nth-child(2) { animation-delay: .8s; }
+.radar-ring:nth-child(3) { animation-delay: 1.6s; }
+@keyframes radar { 0% { transform: scale(.35); opacity: .9; } 100% { transform: scale(1); opacity: 0; } }
+.radar-core {
+  position: relative; display: grid; place-items: center; width: 72px; height: 72px; border-radius: 50%;
+  background: var(--navy); font-size: 34px; box-shadow: 0 0 0 6px var(--primary-soft), 0 10px 26px rgba(11, 31, 58, .3);
+  animation: bob 1.6s ease-in-out infinite;
+}
+@keyframes bob { 50% { transform: translateY(-4px); } }
+.search-modal:not([data-state="searching"]) .radar-ring { animation: none; opacity: 0; }
+.search-modal:not([data-state="searching"]) .radar-core { animation: pop .3s var(--ease); }
+.radar-core { color: var(--primary); }
+.radar-core .ico { width: 34px; height: 34px; stroke-width: 1.7; }
+.search-modal[data-state="found"] .radar-core { background: var(--green-soft); box-shadow: 0 0 0 6px var(--green-soft); color: var(--green-ink); }
+.search-modal[data-state="cancelled"] .radar-core { background: var(--gray-soft); box-shadow: 0 0 0 6px var(--gray-soft); color: var(--gray-ink); }
+.search-status h3 { font-size: 20px; }
+.search-status .muted { margin-top: 4px; font-size: 14px; }
+.search-timer { margin: -4px 0 0; font-size: 26px; font-weight: 800; letter-spacing: .04em; font-variant-numeric: tabular-nums; color: var(--heading); }
+.search-driver {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px;
+  border-radius: var(--radius-sm); background: var(--green-soft); text-align: left;
+}
+.search-driver .plate { font-size: 13px; font-weight: 700; background: var(--surface); }
+.search-trip { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: var(--radius-sm); background: var(--surface-2); border: 1px solid var(--border); text-align: left; }
+.search-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding-top: 10px; border-top: 1px dashed var(--border-strong); color: var(--muted); font-size: 13px; }
+.search-meta strong { color: var(--heading); font-size: 17px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.search-modal .modal-actions { justify-content: stretch; }
+.search-modal .modal-actions .btn { flex: 1; }
+
 @media (max-width: 720px) {
   .page-head { flex-wrap: wrap; align-items: flex-start; }
   .page-head h1 { font-size: 22px; }

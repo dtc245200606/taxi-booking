@@ -15,17 +15,17 @@
   <!-- ===================== ĐĂNG NHẬP / ĐĂNG KÝ ===================== -->
   <section id="auth" class="auth hidden">
     <div class="auth-hero">
-      <div class="brand brand-light"><span class="logo">🚕</span> Taxi Booking</div>
+      <div class="brand brand-light"><span class="logo" data-icon="car"></span> Taxi Booking</div>
       <div class="hero-copy">
         <h1>Đặt xe nhanh,<br>đón đúng giờ.</h1>
         <p>Nền tảng điều phối xe máy, ô tô 4 chỗ và 7 chỗ, minh bạch giá cước và theo dõi chuyến đi từng bước.</p>
         <ul class="hero-points">
-          <li><span>💸</span> Giá cước tính trước khi đặt</li>
-          <li><span>📍</span> Theo dõi trạng thái chuyến đi</li>
-          <li><span>🔒</span> Tài khoản và phiên đăng nhập bảo mật</li>
+          <li><span data-icon="receipt"></span> Giá cước tính trước khi đặt</li>
+          <li><span data-icon="map-pin"></span> Theo dõi trạng thái chuyến đi</li>
+          <li><span data-icon="lock"></span> Tài khoản và phiên đăng nhập bảo mật</li>
         </ul>
       </div>
-      <div class="hero-road" aria-hidden="true"><span class="hero-car">🚕</span></div>
+      <div class="hero-road" aria-hidden="true"><span class="hero-car" data-icon="car"></span></div>
     </div>
 
     <div class="auth-panel">
@@ -34,7 +34,7 @@
           <button class="seg active" data-auth="login" type="button">Đăng nhập</button>
           <button class="seg" data-auth="register" type="button">Đăng ký</button>
         </div>
-        <h2 id="auth-title">Chào mừng trở lại 👋</h2>
+        <h2 id="auth-title">Chào mừng trở lại</h2>
         <p class="muted" id="auth-sub">Đăng nhập để đặt xe và theo dõi chuyến đi của bạn.</p>
 
         <form id="login-form" class="stack">
@@ -55,11 +55,11 @@
           </label>
           <button type="submit" class="btn primary block">Gửi liên kết đặt lại</button>
           <div class="notice hidden" id="forgot-sent">
-            📬 Nếu email này thuộc một tài khoản khách hàng, chúng tôi đã gửi liên kết đặt lại mật khẩu.
+            Nếu email này thuộc một tài khoản khách hàng, chúng tôi đã gửi liên kết đặt lại mật khẩu.
             Hãy kiểm tra hộp thư (kể cả mục Spam). Liên kết có hiệu lực 30 phút.
           </div>
           <p class="muted">Chỉ áp dụng cho khách hàng đã khai báo email khi đăng ký. Nhân viên quên mật khẩu vui lòng liên hệ quản trị viên.</p>
-          <button type="button" class="btn ghost block" data-goto="login">← Quay lại đăng nhập</button>
+          <button type="button" class="btn ghost block" data-goto="login" data-icon="arrow-left">Quay lại đăng nhập</button>
         </form>
 
         <!-- Đặt mật khẩu mới từ link trong email (#reset=<token>) -->
@@ -71,7 +71,7 @@
             <input name="new_password2" type="password" required minlength="8" maxlength="128" autocomplete="new-password">
           </label>
           <button type="submit" class="btn primary block">Lưu mật khẩu mới</button>
-          <button type="button" class="btn ghost block" data-goto="login">← Quay lại đăng nhập</button>
+          <button type="button" class="btn ghost block" data-goto="login" data-icon="arrow-left">Quay lại đăng nhập</button>
         </form>
 
         <form id="register-form" class="stack hidden">
@@ -102,7 +102,7 @@
 
         <!-- Bắt buộc đổi mật khẩu tạm (nhân viên mới / vừa được đặt lại mật khẩu) -->
         <form id="force-form" class="stack hidden">
-          <div class="notice">🔐 Tài khoản của bạn đang dùng mật khẩu tạm do quản trị viên cấp. Hãy đặt mật khẩu mới để tiếp tục.</div>
+          <div class="notice">Tài khoản của bạn đang dùng mật khẩu tạm do quản trị viên cấp. Hãy đặt mật khẩu mới để tiếp tục.</div>
           <label class="field"><span>Mật khẩu tạm</span>
             <input name="current_password" type="password" required maxlength="128" autocomplete="current-password">
           </label>
@@ -123,7 +123,7 @@
   <div id="app" class="hidden">
     <header class="topbar">
       <div class="topbar-inner">
-        <button class="brand brand-btn" id="home-link" type="button" title="Trang chủ"><span class="logo">🚕</span> <span class="brand-text">Taxi Booking</span></button>
+        <button class="brand brand-btn" id="home-link" type="button" title="Trang chủ"><span class="logo" data-icon="car"></span> <span class="brand-text">Taxi Booking</span></button>
         <div class="greeting" data-role="customer">
           <strong id="greeting-title"></strong>
           <span id="greeting-sub">Hôm nay bạn muốn đi đâu?</span>
@@ -196,11 +196,11 @@
             <div class="route-inputs">
               <label class="field pin pin-from"><span>Điểm đón</span>
                 <input name="pickup_address" required maxlength="200" placeholder="VD: 12 Lương Ngọc Quyến, TP Thái Nguyên">
-                <button type="button" class="map-open" data-map="pickup" title="Chọn điểm đón trên bản đồ" aria-label="Chọn điểm đón trên bản đồ">🗺️</button>
+                <button type="button" class="map-open" data-map="pickup" title="Chọn điểm đón trên bản đồ" aria-label="Chọn điểm đón trên bản đồ" data-icon="map"></button>
               </label>
               <label class="field pin pin-to"><span>Điểm đến</span>
                 <input name="dropoff_address" required maxlength="200" placeholder="VD: Ga Thái Nguyên">
-                <button type="button" class="map-open" data-map="dropoff" title="Chọn điểm đến trên bản đồ" aria-label="Chọn điểm đến trên bản đồ">🗺️</button>
+                <button type="button" class="map-open" data-map="dropoff" title="Chọn điểm đến trên bản đồ" aria-label="Chọn điểm đến trên bản đồ" data-icon="map"></button>
               </label>
             </div>
             <fieldset class="field">
@@ -208,15 +208,15 @@
               <div class="vehicles">
                 <label class="vehicle">
                   <input type="radio" name="vehicle_type" value="bike">
-                  <span class="v-icon">🛵</span><span class="v-name">Xe máy</span><span class="v-price">10k + 5k/km</span>
+                  <span class="v-icon" data-icon="bike"></span><span class="v-name">Xe máy</span><span class="v-price">10k + 5k/km</span>
                 </label>
                 <label class="vehicle">
                   <input type="radio" name="vehicle_type" value="car4" checked>
-                  <span class="v-icon">🚗</span><span class="v-name">Ô tô 4 chỗ</span><span class="v-price">20k + 12k/km</span>
+                  <span class="v-icon" data-icon="car"></span><span class="v-name">Ô tô 4 chỗ</span><span class="v-price">20k + 12k/km</span>
                 </label>
                 <label class="vehicle">
                   <input type="radio" name="vehicle_type" value="car7">
-                  <span class="v-icon">🚙</span><span class="v-name">Ô tô 7 chỗ</span><span class="v-price">25k + 15k/km</span>
+                  <span class="v-icon" data-icon="van"></span><span class="v-name">Ô tô 7 chỗ</span><span class="v-price">25k + 15k/km</span>
                 </label>
               </div>
             </fieldset>
@@ -275,9 +275,9 @@
           <label class="field"><span>Biển số</span><input name="license_plate" required maxlength="20" placeholder="20A-123.45"></label>
           <label class="field"><span>Loại xe</span>
             <select name="vehicle_type">
-              <option value="bike">🛵 Xe máy</option>
-              <option value="car4" selected>🚗 Ô tô 4 chỗ</option>
-              <option value="car7">🚙 Ô tô 7 chỗ</option>
+              <option value="bike">Xe máy</option>
+              <option value="car4" selected>Ô tô 4 chỗ</option>
+              <option value="car7">Ô tô 7 chỗ</option>
             </select>
           </label>
           <button type="submit" class="btn primary">+ Thêm tài xế</button>
@@ -290,7 +290,7 @@
 
       <!-- ĐĂNG KÝ LÀM TÀI XẾ (khách hàng) -->
       <section id="become-driver" class="panel">
-        <button type="button" class="link-btn back-link" data-goto-tab="profile">← Hồ sơ cá nhân</button>
+        <button type="button" class="link-btn back-link" data-goto-tab="profile" data-icon="arrow-left">Hồ sơ cá nhân</button>
         <div class="page-head">
           <div>
             <h1>Trở thành tài xế đối tác</h1>
@@ -320,15 +320,15 @@
               <div class="vehicles">
                 <label class="vehicle">
                   <input type="radio" name="vehicle_type" value="bike">
-                  <span class="v-icon">🛵</span><span class="v-name">Xe máy</span><span class="v-price">GPLX A1, A</span>
+                  <span class="v-icon" data-icon="bike"></span><span class="v-name">Xe máy</span><span class="v-price">GPLX A1, A</span>
                 </label>
                 <label class="vehicle">
                   <input type="radio" name="vehicle_type" value="car4" checked>
-                  <span class="v-icon">🚗</span><span class="v-name">Ô tô 4 chỗ</span><span class="v-price">GPLX B trở lên</span>
+                  <span class="v-icon" data-icon="car"></span><span class="v-name">Ô tô 4 chỗ</span><span class="v-price">GPLX B trở lên</span>
                 </label>
                 <label class="vehicle">
                   <input type="radio" name="vehicle_type" value="car7">
-                  <span class="v-icon">🚙</span><span class="v-name">Ô tô 7 chỗ</span><span class="v-price">GPLX B trở lên</span>
+                  <span class="v-icon" data-icon="van"></span><span class="v-name">Ô tô 7 chỗ</span><span class="v-price">GPLX B trở lên</span>
                 </label>
               </div>
               <div class="row-2">
@@ -410,7 +410,7 @@
         </div>
 
         <div class="card driver-promo" id="profile-driver-card" data-role="customer">
-          <span class="promo-icon">🚘</span>
+          <span class="promo-icon" data-icon="steering"></span>
           <div class="promo-text">
             <h2>Tài xế đối tác</h2>
             <p class="muted" id="driver-card-text"></p>
@@ -541,6 +541,26 @@
     </form>
   </dialog>
 
+  <!-- Chờ tìm tài xế: mở ngay sau khi khách hàng đặt xe, tự cập nhật khi có tài xế nhận -->
+  <dialog id="search-dialog" class="modal search-modal" data-state="searching" aria-labelledby="search-title">
+    <div class="search-radar" aria-hidden="true">
+      <span class="radar-ring"></span><span class="radar-ring"></span><span class="radar-ring"></span>
+      <span class="radar-core" id="search-icon" data-icon="car"></span>
+    </div>
+    <div class="search-status" role="status" aria-live="polite">
+      <h3 id="search-title">Đang tìm tài xế…</h3>
+      <p class="muted" id="search-sub"></p>
+    </div>
+    <p class="search-timer" id="search-timer">00:00</p>
+    <div class="search-driver hidden" id="search-driver"></div>
+    <div class="search-trip" id="search-trip"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn ghost" id="search-hide">Ẩn đi</button>
+      <button type="button" class="btn danger" id="search-cancel">Hủy chuyến</button>
+      <button type="button" class="btn primary hidden" id="search-done">Xong</button>
+    </div>
+  </dialog>
+
   <!-- Hộp thoại hiển thị mật khẩu tạm (chỉ 1 lần) -->
   <dialog id="temp-dialog" class="modal">
     <div class="stack">
@@ -550,7 +570,7 @@
         <code id="temp-password"></code>
         <button class="btn sm" type="button" id="temp-copy">Sao chép</button>
       </div>
-      <p class="muted">⚠️ Mật khẩu này chỉ hiển thị <strong>một lần</strong>. Hãy gửi cho nhân viên qua kênh an toàn; họ sẽ phải đổi mật khẩu khi đăng nhập.</p>
+      <p class="muted warn-note" data-icon="alert">Mật khẩu này chỉ hiển thị <strong>một lần</strong>. Hãy gửi cho nhân viên qua kênh an toàn; họ sẽ phải đổi mật khẩu khi đăng nhập.</p>
       <div class="modal-actions">
         <button class="btn primary" type="button" data-close>Tôi đã lưu lại</button>
       </div>
@@ -573,7 +593,7 @@
         <button class="chip" type="button" data-period="30d">30 ngày</button>
         <button class="chip" type="button" data-period="all">Tất cả</button>
       </div>
-      <button class="btn ghost sm detail-close" type="button" data-close aria-label="Đóng">✕</button>
+      <button class="btn ghost sm detail-close" type="button" data-close aria-label="Đóng" data-icon="x"></button>
     </div>
     <div class="detail-body" id="detail-body"></div>
   </dialog>
@@ -609,16 +629,16 @@
   <dialog id="map-dialog" class="modal map-modal">
     <div class="map-head">
       <h3>Chọn địa điểm trên bản đồ</h3>
-      <button type="button" class="btn ghost sm" id="map-close" aria-label="Đóng">✕</button>
+      <button type="button" class="btn ghost sm" id="map-close" aria-label="Đóng" data-icon="x"></button>
     </div>
     <div class="chips" id="map-target">
-      <button type="button" class="chip" data-target="pickup">🟢 Điểm đón</button>
-      <button type="button" class="chip" data-target="dropoff">🔴 Điểm đến</button>
+      <button type="button" class="chip" data-target="pickup"><span class="dot from"></span>Điểm đón</button>
+      <button type="button" class="chip" data-target="dropoff"><span class="dot to"></span>Điểm đến</button>
     </div>
     <form id="map-search" class="map-search">
       <input type="search" name="q" maxlength="200" placeholder="Tìm địa chỉ, VD: Ga Thái Nguyên" autocomplete="off">
       <button type="submit" class="btn">Tìm</button>
-      <button type="button" class="btn ghost" id="map-locate" title="Dùng vị trí hiện tại của tôi">📍 Vị trí của tôi</button>
+      <button type="button" class="btn ghost" id="map-locate" title="Dùng vị trí hiện tại của tôi" data-icon="locate">Vị trí của tôi</button>
     </form>
     <ul id="map-results" class="map-results hidden"></ul>
     <div id="map" class="map"></div>
